@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+langchain>=1.0.0
+langchain-community>=0.3.0
+langchain-google-genai>=2.0.0
+google-generativeai
+pydantic>=2.7,<3.0
