@@ -1,0 +1,12 @@
+{
+  "name": "Discharge Summary Generator",
+  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.9",
+  "workspaceFolder": "/workspaces/Discharge-Summary-Generator",
+  "postCreateCommand": "pip install -r requirements.txt.txt",
+  "forwardPorts": [8080],
+  "features": {},
+  "extensions": [
+    "ms-python.python",
+    "ms-azuretools.vscode-docker"
+  ]
+}

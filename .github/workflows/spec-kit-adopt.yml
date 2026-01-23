@@ -1,0 +1,37 @@
+name: Spec-Kit Adopt CI
+
+on:
+  push:
+    branches:
+      - spec-kit/adopt
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt.txt
+
+    - name: Lint devcontainer.json
+      run: |
+        jq . .devcontainer/devcontainer.json
+
+    - name: Test MCP server
+      run: |
+        docker-compose -f mcp/docker-compose.yml up -d
+        sleep 5
+        curl -f http://localhost:8080/file_system/read?path=README.md || exit 1
+        docker-compose -f mcp/docker-compose.yml down
