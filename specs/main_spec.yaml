@@ -1,0 +1,33 @@
+project_name: Discharge Summary Generator
+description: A repository for generating discharge summaries using AI tools.
+owner: sreevathsasridhar1506-oss
+modules:
+  - name: API
+    description: Handles API endpoints for the application.
+  - name: CENTRALORCH
+    description: Orchestrates the central logic of the application.
+  - name: LangAPI
+    description: Provides language model API integrations.
+  - name: SQLDBAgent1
+    description: Manages SQL database interactions.
+api_contracts:
+  - endpoint: /generate-summary
+    method: POST
+    request_body: { patient_data: object }
+    response_body: { summary: string }
+dev_tasks:
+  - name: Run Tests
+    command: pytest
+  - name: Start Server
+    command: uvicorn main:app --reload
+priority_features:
+  - user_story: As a user, I want to generate discharge summaries by providing patient data.
+    acceptance_criteria:
+      - The API should return a summary within 2 seconds.
+      - The summary should be accurate and concise.
+generation_rules:
+  - feature: Generate discharge summaries
+    maps_to:
+      - API.py
+      - CENTRALORCH.py
+      - LangAPI.py

@@ -1,0 +1,28 @@
+{
+  "project_name": "Discharge Summary Generator",
+  "description": "A repository for generating discharge summaries using AI tools.",
+  "entry_points": [
+    "main.py",
+    "API.py",
+    "CENTRALLLM.py",
+    "CENTRALORCH.py",
+    "DBC1.py",
+    "LangAPI.py",
+    "LangGraph.py",
+    "LLMO.py",
+    "LO.py",
+    "LO2.py",
+    "PythonREPLprog.py",
+    "SQLDBAgent1.py",
+    "TT.py"
+  ],
+  "dependencies": [
+    "fastapi",
+    "uvicorn[standard]",
+    "langchain>=1.0.0",
+    "langchain-community>=0.3.0",
+    "langchain-google-genai>=2.0.0",
+    "google-generativeai",
+    "pydantic>=2.7,<3.0"
+  ]
+}
