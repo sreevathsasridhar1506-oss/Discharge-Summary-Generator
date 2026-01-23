@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "azdo-business-requirements": {
+      "command": "python3",
+      "args": [
+        "/workspaces/Discharge-Summary-Generator/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "AZDO_ORG_URL": "${AZDO_ORG_URL}",
+        "AZDO_PAT_TOKEN": "${AZDO_PAT_TOKEN}",
+        "AZDO_PROJECT_NAME": "${AZDO_PROJECT_NAME}",
+        "GROQ_API_KEY": "${GROQ_API_KEY}"
+      },
+      "alwaysAllow": [
+        "fetch_work_items",
+        "analyze_codebase",
+        "generate_business_requirements",
+        "validate_credentials"
+      ]
+    },
+    "filesystem": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "mcp.server.filesystem",
+        "/workspaces/Discharge-Summary-Generator"
+      ]
+    }
+  }
+}

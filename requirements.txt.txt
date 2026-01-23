@@ -5,3 +5,8 @@ langchain-community>=0.3.0
 langchain-google-genai>=2.0.0
 google-generativeai
 pydantic>=2.7,<3.0
+langchain-groq>=0.1.0
+azure-devops==5.1.0
+azure-identity>=1.14.0
+python-dotenv>=1.0.0
+mcp>=0.1.0

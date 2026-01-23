@@ -1,0 +1,68 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "Discharge Summary Generator",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/python:2-3.12-trixie",
+	"features": {
+		"ghcr.io/devcontainers/features/python:1": {},
+		"ghcr.io/devcontainer-config/features/dot-config:3": {}
+	},
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [8000, 8001],
+	"portsAttributes": {
+		"8000": {
+			"label": "FastAPI Application",
+			"onAutoForward": "notify"
+		},
+		"8001": {
+			"label": "MCP Server",
+			"onAutoForward": "notify"
+		}
+	},
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-python.debugpy",
+				"charliermarsh.ruff",
+				"salient.github-copilot",
+				"salient.copilot-chat"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python",
+				"python.linting.enabled": true,
+				"python.linting.pylintEnabled": false,
+				"[python]": {
+					"editor.defaultFormatter": "ms-python.python",
+					"editor.formatOnSave": true
+				},
+				"cline.mcp.servers": {
+					"azdo-business-requirements": {
+						"command": "python3",
+						"args": ["${containerWorkspaceFolder}/mcp_server.py"],
+						"env": {
+							"PYTHONUNBUFFERED": "1",
+							"AZDO_ORG_URL": "${localEnv:AZDO_ORG_URL}",
+							"AZDO_PAT_TOKEN": "${localEnv:AZDO_PAT_TOKEN}",
+							"AZDO_PROJECT_NAME": "${localEnv:AZDO_PROJECT_NAME}"
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
