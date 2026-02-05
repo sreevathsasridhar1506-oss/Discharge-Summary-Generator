@@ -1,0 +1,341 @@
+{
+  "agent": {
+    "id": "agent_0",
+    "name": "SpecKit Development Agent",
+    "version": "1.0.0",
+    "type": "custom-copilot-agent",
+    "description": "Transforms your local VS Code repository into a Spec Kit driven development (SDD) repository",
+    "publisher": "Copilot",
+    "enabled": true
+  },
+  "metadata": {
+    "displayName": "SpecKit SDD Agent",
+    "category": "Development",
+    "tags": [
+      "speckit",
+      "sdd",
+      "development",
+      "repo-management",
+      "branch-management"
+    ]
+  },
+  "instructions": {
+    "systemPrompt": "You are a specialized Copilot agent designed to transform VS Code repositories into Spec Kit driven development (SDD) repositories. Your primary responsibility is to automate the SDD setup process by managing branches, installing dependencies, and generating specification files. Always ensure changes are made on the feature branch, and maintain clear communication about progress and next steps.",
+    "primaryGoal": "Transform the local repository into a Spec Kit driven development (SDD) repository by setting up the necessary infrastructure, creating technical requirements, and generating constitution files.",
+    "userInstructions": [
+      "Initialize the SDD setup by checking and configuring MCP servers",
+      "Create and checkout the feature_speckit branch",
+      "Install and initialize Spec Kit",
+      "Analyze existing codebase and generate technical requirements",
+      "Generate specification constitution file using Spec Kit"
+    ]
+  },
+  "workflow": {
+    "steps": [
+      {
+        "stepId": 1,
+        "title": "Verify and Configure MCP Servers",
+        "description": "Check if .vscode/mcp.json exists in the workspace root. If not, create it with the required MCP server configurations.",
+        "action": "verify_and_create_mcp_config",
+        "details": {
+          "configPath": ".vscode/mcp.json",
+          "required": true,
+          "createIfMissing": true,
+          "servers": [
+            {
+              "name": "GitHub MCP Server",
+              "id": "io.github.github/github-mcp-server",
+              "type": "stdio",
+              "command": "docker",
+              "args": [
+                "run",
+                "-i",
+                "--rm",
+                "-e",
+                "GITHUB_PERSONAL_ACCESS_TOKEN=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",
+                "ghcr.io/github/github-mcp-server:0.30.1"
+              ],
+              "gallery": "https://api.mcp.github.com",
+              "version": "0.30.1"
+            },
+            {
+              "name": "Azure DevOps MCP Server",
+              "id": "microsoft/azure-devops-mcp",
+              "type": "stdio",
+              "command": "npx",
+              "args": [
+                "-y",
+                "@azure-devops/mcp",
+                "avdforai",
+                "--authentication",
+                "env"
+              ],
+              "env": {
+                "AZURE_DEVOPS_EXT_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                "AZURE_DEVOPS_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/avdforai",
+                "AZURE_DEVOPS_PROJECT": "aimetlab"
+              },
+              "gallery": "https://api.mcp.github.com",
+              "version": "1.0.0"
+            }
+          ]
+        },
+        "tools": [
+          "file_operations",
+          "mcp_server_config"
+        ],
+        "successCriteria": "mcp.json exists in .vscode with all required server configurations"
+      },
+      {
+        "stepId": 2,
+        "title": "Create Feature Branch",
+        "description": "Use GitHub MCP server to create a new feature branch named 'feature_speckit' for all SDD changes.",
+        "action": "create_git_branch",
+        "details": {
+          "branchName": "feature_speckit",
+          "fromBranch": "main",
+          "toolToUse": "github/create_branch",
+          "mcpServer": "io.github.github/github-mcp-server"
+        },
+        "tools": [
+          "mcp_github_tools",
+          "git_operations"
+        ],
+        "successCriteria": "feature_speckit branch created via MCP"
+      },
+      {
+        "stepId": 3,
+        "title": "Checkout Feature Branch",
+        "description": "Switch to the newly created feature_speckit branch to ensure all changes are isolated.",
+        "action": "checkout_branch",
+        "details": {
+          "branchName": "feature_speckit",
+          "command": "git checkout feature_speckit"
+        },
+        "tools": [
+          "terminal_execution",
+          "git_operations"
+        ],
+        "successCriteria": "Successfully checked out feature_speckit branch"
+      },
+      {
+        "stepId": 4,
+        "title": "Install Spec Kit",
+        "description": "Install Spec Kit and its dependencies using uv package manager and initialize it in the repository.",
+        "action": "install_speckit",
+        "details": {
+          "commands": [
+            {
+              "order": 1,
+              "command": "pip install uv",
+              "description": "Install uv package manager"
+            },
+            {
+              "order": 2,
+              "command": "uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git",
+              "description": "Install specify-cli from GitHub repository"
+            },
+            {
+              "order": 3,
+              "command": "specify init --here",
+              "description": "Initialize Spec Kit in the current repository"
+            }
+          ],
+          "workingDirectory": "${workspaceRoot}",
+          "selectAiAssistant": true,
+          "aiAssistantPrompt": "During Spec Kit initialization, you will be prompted to select an AI assistant. Choose 'Copilot' as your AI assistant for this setup."
+        },
+        "tools": [
+          "terminal_execution",
+          "package_manager"
+        ],
+        "successCriteria": "Spec Kit installed and initialized successfully in feature_speckit branch"
+      },
+      {
+        "stepId": 5,
+        "title": "Read Files from Other Branches",
+        "description": "Use MCP read tools to analyze and gather information from files in other branches to understand the codebase structure.",
+        "action": "read_branch_files",
+        "details": {
+          "tool": "mcp_read_tool",
+          "scope": "other_branches",
+          "purpose": "Gather technical information for requirements file",
+          "mcpServer": "io.github.github/github-mcp-server"
+        },
+        "tools": [
+          "mcp_read_tools",
+          "file_analysis"
+        ],
+        "successCriteria": "Successfully read and collected file information from other branches"
+      },
+      {
+        "stepId": 6,
+        "title": "Create Technical Requirements File",
+        "description": "Generate a comprehensive technical requirements markdown file based on the information gathered from other branches.",
+        "action": "generate_technical_requirements",
+        "details": {
+          "fileName": "technical_requirements.md",
+          "location": "${workspaceRoot}/feature_speckit",
+          "source": "MCP reads from other branches",
+          "format": "markdown",
+          "content": {
+            "sections": [
+              "Project Overview",
+              "Current Architecture",
+              "Existing Technologies",
+              "Codebase Structure",
+              "Dependencies",
+              "Key Components",
+              "Development Workflow",
+              "Testing Framework",
+              "Deployment Pipeline"
+            ]
+          }
+        },
+        "tools": [
+          "file_creation",
+          "content_generation"
+        ],
+        "successCriteria": "technical_requirements.md created with comprehensive technical details"
+      },
+      {
+        "stepId": 7,
+        "title": "Generate Specification Constitution File",
+        "description": "Use Spec Kit to generate the specification constitution file (specify.constitution.md) based on the technical requirements.",
+        "action": "generate_constitution",
+        "details": {
+          "command": "specify constitution --input technical_requirements.md --output specify.constitution.md",
+          "inputFile": "technical_requirements.md",
+          "outputFile": "specify.constitution.md",
+          "workingDirectory": "${workspaceRoot}",
+          "description": "Generate constitution file that serves as the specification guide for the SDD repository"
+        },
+        "tools": [
+          "terminal_execution",
+          "speckit_tools"
+        ],
+        "successCriteria": "specify.constitution.md generated successfully with constitution rules"
+      }
+    ],
+    "cleanup": {
+      "description": "Ensure all changes are committed to the feature branch",
+      "steps": [
+        "Review all generated files in feature_speckit branch",
+        "Commit changes to feature_speckit with appropriate messages",
+        "Notify user that SDD transformation is complete and ready for review"
+      ]
+    }
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "MCP GitHub Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "create_branch",
+          "checkout_branch",
+          "read_files",
+          "repository_analysis"
+        ]
+      },
+      {
+        "name": "Terminal Execution",
+        "type": "terminal_commands",
+        "capabilities": [
+          "pip_commands",
+          "uv_commands",
+          "specify_commands",
+          "git_commands"
+        ]
+      },
+      {
+        "name": "File Operations",
+        "type": "file_management",
+        "capabilities": [
+          "create_files",
+          "read_files",
+          "modify_files",
+          "analyze_structure"
+        ]
+      },
+      {
+        "name": "AI Assistant Integration",
+        "type": "ai_integration",
+        "capabilities": [
+          "copilot_selection",
+          "interactive_prompts",
+          "guidance_and_help"
+        ]
+      }
+    ]
+  },
+  "configuration": {
+    "branch": {
+      "primary": "feature_speckit",
+      "isolated": true,
+      "createdViaMCP": true
+    },
+    "specKit": {
+      "installMethod": "uv",
+      "repository": "git+https://github.com/github/spec-kit.git",
+      "initRequired": true
+    },
+    "outputFiles": [
+      {
+        "name": "technical_requirements.md",
+        "description": "Technical specifications gathered from codebase analysis",
+        "generated": true,
+        "location": "root"
+      },
+      {
+        "name": "specify.constitution.md",
+        "description": "Specification constitution file generated by Spec Kit",
+        "generated": true,
+        "location": "root"
+      }
+    ],
+    "mcpServers": [
+      "io.github.github/github-mcp-server",
+      "microsoft/azure-devops-mcp"
+    ]
+  },
+  "activation": {
+    "activationEvents": [
+      "onCommand:agent_0.start",
+      "onCommand:agent_0.initialize",
+      "onView:copilot-agents"
+    ],
+    "startCommand": "copilot.agent.agent_0.start"
+  },
+  "ui": {
+    "chatSelection": true,
+    "displayInAgentList": true,
+    "icon": "⚙️",
+    "color": "#0078D4"
+  },
+  "helpAndDocumentation": {
+    "overview": "Transform your VS Code repository into a Spec Kit driven development (SDD) repository",
+    "prerequisites": [
+      "Docker installed and running",
+      "Git repository initialized",
+      "Python 3.8+ installed",
+      "GitHub MCP server configured in .vscode/mcp.json"
+    ],
+    "steps": [
+      "Invoke the agent from Copilot chat",
+      "Agent verifies MCP configuration",
+      "Creates and switches to feature_speckit branch",
+      "Installs Spec Kit with your chosen AI assistant",
+      "Generates technical requirements from existing code",
+      "Creates specification constitution file"
+    ],
+    "expectedOutcome": "A fully configured SDD repository with all specification files on the feature_speckit branch",
+    "postCompletion": [
+      "Review the generated specification files",
+      "Test the SDD workflow",
+      "Merge feature_speckit to main when satisfied",
+      "Begin SDD-driven development process"
+    ]
+  }
+}
