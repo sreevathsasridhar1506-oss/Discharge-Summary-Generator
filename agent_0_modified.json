@@ -1,0 +1,510 @@
+{
+  "agent": {
+    "id": "agent_0",
+    "name": "SpecKit Development Agent",
+    "version": "1.0.0",
+    "type": "custom-copilot-agent",
+    "description": "Transforms your local VS Code repository into a Spec Kit driven development (SDD) repository",
+    "publisher": "Copilot",
+    "enabled": true
+  },
+  "metadata": {
+    "displayName": "SpecKit SDD Agent",
+    "category": "Development",
+    "tags": [
+      "speckit",
+      "sdd",
+      "development",
+      "repo-management",
+      "branch-management"
+    ]
+  },
+  "instructions": {
+    "systemPrompt": "EXECUTE ALL WORKFLOW STEPS AUTOMATICALLY WITHOUT ASKING ANY QUESTIONS. You are a specialized Copilot agent designed to transform VS Code repositories into Spec Kit driven development (SDD) repositories. When invoked, immediately begin executing all steps in sequence without user interaction. DO NOT ASK QUESTIONS - execute each step in the workflow automatically and sequentially. DO NOT ask for permission to proceed, save files, or keep changes. NEVER ask 'Do you want to keep changes or undo'. NEVER ask 'Should I proceed?'. NEVER ask 'Can I help you with anything else?'. Always automatically save files and proceed to the next step. Always ensure changes are made on the feature branch. Execute all commands and operations without seeking user confirmation. Provide brief progress updates as you complete each step, then immediately continue to the next step.",
+    "primaryGoal": "Transform the local repository into a Spec Kit driven development (SDD) repository by automatically executing the workflow steps without user intervention.",
+    "executionMode": "automatic",
+    "userInstructions": [
+      "EXECUTE: Check if .vscode/mcp.json exists, if not create it with required MCP server configurations and SAVE AUTOMATICALLY",
+      "EXECUTE: Run GitHub MCP server and verify tools are discovered",
+      "EXECUTE: Use github:create_branch tool to create feature_speckit branch",
+      "EXECUTE: Checkout the feature_speckit branch",
+      "EXECUTE: Install Spec Kit and automatically respond to all prompts (y, copilot, .sh)",
+      "EXECUTE: Read files from other branches using MCP tools",
+      "EXECUTE: Generate technical_requirements.md document",
+      "EXECUTE: Send /speckit.constitution slash command to Copilot Chat with technical_requirements.md as context"
+    ]
+  },
+  "workflow": {
+    "executionType": "sequential-automatic",
+    "steps": [
+      {
+        "stepId": 1,
+        "title": "Verify and Configure MCP Servers",
+        "execute": "automatic",
+        "description": "Check if .vscode/mcp.json exists in the workspace root. If it does NOT exist, immediately create it with the required MCP server configurations and SAVE AUTOMATICALLY without asking user to keep changes or undo. Then run the GitHub MCP server and verify it's working by checking if the github:create_branch tool is discovered. Proceed automatically without asking for permission.",
+        "action": "verify_and_create_mcp_config",
+        "details": {
+          "configPath": ".vscode/mcp.json",
+          "required": true,
+          "createIfMissing": true,
+          "executeImmediately": true,
+          "autoSave": true,
+          "noUserConfirmation": true,
+          "instruction": "Create .vscode/mcp.json with the exact content below. Save automatically without asking user. Do NOT ask to keep changes or undo. After saving, immediately run the GitHub MCP server to verify it is working.",
+          "mcpJsonContent": {
+            "servers": {
+              "io.github.github/github-mcp-server": {
+                "type": "stdio",
+                "command": "docker",
+                "args": [
+                  "run",
+                  "-i",
+                  "--rm",
+                  "-e",
+                  "GITHUB_PERSONAL_ACCESS_TOKEN=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",
+                  "ghcr.io/github/github-mcp-server:0.30.1"
+                ],
+                "gallery": "https://api.mcp.github.com",
+                "version": "0.30.1"
+              },
+              "microsoft/azure-devops-mcp": {
+                "type": "stdio",
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "@azure-devops/mcp",
+                  "avdforai",
+                  "--authentication",
+                  "env"
+                ],
+                "env": {
+                  "AZURE_DEVOPS_EXT_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                  "AZURE_DEVOPS_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                  "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/avdforai",
+                  "AZURE_DEVOPS_PROJECT": "aimetlab"
+                },
+                "gallery": "https://api.mcp.github.com",
+                "version": "1.0.0"
+              },
+              "microsoft/playwright-mcp": {
+                "type": "stdio",
+                "command": "npx",
+                "args": [
+                  "@playwright/mcp@latest"
+                ],
+                "gallery": "https://api.mcp.github.com",
+                "version": "0.0.1-seed"
+              }
+            }
+          },
+          "verification": {
+            "runMCPServer": true,
+            "checkToolsDiscovered": true,
+            "requiredTools": [
+              "github:create_branch"
+            ],
+            "executeAutomatically": true,
+            "verificationAction": "After saving mcp.json, immediately run the GitHub MCP server to verify it is working. Check if github:create_branch tool is discovered. If tools are discovered, proceed to Step 2 automatically without asking for permission."
+          }
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noKeepChangesPrompt": true,
+          "noPermissionRequests": true
+        },
+        "tools": [
+          "file_operations",
+          "mcp_server_config",
+          "mcp_verification"
+        ],
+        "successCriteria": "mcp.json created and SAVED AUTOMATICALLY in .vscode with correct server configurations (no user prompts for saving) AND GitHub MCP server is running with github:create_branch tool discovered AND agent proceeds automatically without asking permission",
+        "onSuccess": "Proceed to Step 2 automatically"
+      },
+      {
+        "stepId": 2,
+        "title": "Create Feature Branch",
+        "execute": "automatic",
+        "description": "Use GitHub MCP server's github:create_branch tool to create feature_speckit branch from main branch. Do not ask for permission to proceed.",
+        "action": "create_git_branch",
+        "details": {
+          "branchName": "feature_speckit",
+          "fromBranch": "main",
+          "toolToUse": "github:create_branch",
+          "mcpServer": "io.github.github/github-mcp-server",
+          "executeImmediately": true,
+          "instruction": "Immediately execute github:create_branch tool to create feature_speckit branch from main. Do not ask for user permission."
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true
+        },
+        "tools": [
+          "mcp_github_tools",
+          "git_operations"
+        ],
+        "successCriteria": "feature_speckit branch created successfully via github:create_branch MCP tool",
+        "onSuccess": "Proceed to Step 3 automatically"
+      },
+      {
+        "stepId": 3,
+        "title": "Checkout Feature Branch",
+        "execute": "automatic",
+        "description": "Switch to the feature_speckit branch immediately without asking permission.",
+        "action": "checkout_branch",
+        "details": {
+          "branchName": "feature_speckit",
+          "command": "git checkout feature_speckit",
+          "executeImmediately": true,
+          "instruction": "Execute git checkout feature_speckit command immediately without asking permission"
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true
+        },
+        "tools": [
+          "terminal_execution",
+          "git_operations"
+        ],
+        "successCriteria": "Successfully checked out feature_speckit branch",
+        "onSuccess": "Proceed to Step 4 automatically"
+      },
+      {
+        "stepId": 4,
+        "title": "Install Spec Kit",
+        "execute": "automatic",
+        "description": "Install Spec Kit using uv package manager and initialize it. Automatically respond to ALL prompts without asking user.",
+        "action": "install_speckit",
+        "details": {
+          "commands": [
+            {
+              "order": 1,
+              "command": "pip install uv",
+              "description": "Install uv package manager",
+              "executeImmediately": true
+            },
+            {
+              "order": 2,
+              "command": "uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git",
+              "description": "Install specify-cli from GitHub repository",
+              "executeImmediately": true
+            },
+            {
+              "order": 3,
+              "command": "specify init --here",
+              "description": "Initialize Spec Kit in the current repository",
+              "executeImmediately": true,
+              "interactiveResponses": {
+                "mode": "automatic",
+                "responses": [
+                  {
+                    "promptPattern": "template files will be merged.*may overwrite",
+                    "response": "y",
+                    "description": "Automatically respond 'y' to template file merge/overwrite prompt"
+                  },
+                  {
+                    "promptPattern": "Select.*AI assistant",
+                    "response": "copilot",
+                    "description": "Automatically select 'copilot' as AI assistant"
+                  },
+                  {
+                    "promptPattern": "Choose.*script type",
+                    "response": ".sh",
+                    "description": "Automatically select '.sh' for script type"
+                  }
+                ],
+                "instruction": "Provide these responses automatically when prompted - DO NOT ask user"
+              }
+            }
+          ],
+          "workingDirectory": "${workspaceRoot}",
+          "automatedPrompts": true,
+          "executeSequentially": true
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "autoRespondToPrompts": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true
+        },
+        "tools": [
+          "terminal_execution",
+          "package_manager",
+          "interactive_command_handler"
+        ],
+        "successCriteria": "Spec Kit installed and initialized successfully with automated responses (y, copilot, .sh)",
+        "onSuccess": "Proceed to Step 5 automatically"
+      },
+      {
+        "stepId": 5,
+        "title": "Read Files from Other Branches",
+        "execute": "automatic",
+        "description": "Use MCP read tools to automatically analyze files in other branches to understand the codebase structure.",
+        "action": "read_branch_files",
+        "details": {
+          "tool": "mcp_read_tool",
+          "scope": "other_branches",
+          "branches": [
+            "main",
+            "develop",
+            "master"
+          ],
+          "purpose": "Gather technical information for requirements file",
+          "mcpServer": "io.github.github/github-mcp-server",
+          "executeImmediately": true,
+          "instruction": "Automatically read files from main/develop/master branches to gather codebase information"
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true
+        },
+        "tools": [
+          "mcp_read_tools",
+          "file_analysis"
+        ],
+        "successCriteria": "Successfully read and collected file information from other branches",
+        "onSuccess": "Proceed to Step 6 automatically"
+      },
+      {
+        "stepId": 6,
+        "title": "Create Technical Requirements File",
+        "execute": "automatic",
+        "description": "Automatically generate technical_requirements.md based on information gathered from other branches. Save automatically without asking permission.",
+        "action": "generate_technical_requirements",
+        "details": {
+          "fileName": "technical_requirements.md",
+          "location": "${workspaceRoot}",
+          "source": "MCP reads from other branches",
+          "format": "markdown",
+          "executeImmediately": true,
+          "autoSave": true,
+          "instruction": "Automatically generate comprehensive technical requirements document and save without asking user",
+          "content": {
+            "sections": [
+              "Project Overview",
+              "Current Architecture",
+              "Existing Technologies",
+              "Codebase Structure",
+              "Dependencies",
+              "Key Components",
+              "Development Workflow",
+              "Testing Framework",
+              "Deployment Pipeline"
+            ]
+          }
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noPermissionRequests": true
+        },
+        "tools": [
+          "file_creation",
+          "content_generation"
+        ],
+        "successCriteria": "technical_requirements.md created with comprehensive technical details and saved automatically",
+        "onSuccess": "Proceed to Step 7 automatically"
+      },
+      {
+        "stepId": 7,
+        "title": "Generate Constitution via Spec-Kit Slash Command",
+        "execute": "automatic",
+        "description": "Set up virtual environment, activate it, and automatically send the Spec-Kit slash command to Copilot Chat so that the constitution file is generated based on the previously created technical requirement file.",
+        "action": "copilot_chat_message",
+        "details": {
+          "virtualEnvironment": {
+            "create": true,
+            "path": ".venv",
+            "command": "python -m venv .venv",
+            "activateCommand": "source .venv/bin/activate || .venv\\Scripts\\activate",
+            "instruction": "Create and activate virtual environment before executing the constitution generation"
+          },
+          "chatMessage": "/speckit.constitution",
+          "contextFile": "technical_requirements.md",
+          "contextInstruction": "Use the technical_requirements.md file created in the previous step as context for generating the constitution file",
+          "expectedOutcome": "Copilot generates the constitution file based on the existing technical_requirements.md and saves it.",
+          "autoSave": true,
+          "executeImmediately": true,
+          "instruction": "First create and activate a virtual environment. Then automatically send the /speckit.constitution slash command to Copilot Chat with the technical_requirements.md file as context. The command will use the technical requirements to generate the constitution file. Do not ask for user confirmation."
+        },
+        "automationRules": {
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "noPermissionRequests": true,
+          "autoSaveFiles": true,
+          "useVirtualEnvironment": true
+        },
+        "tools": [
+          "copilot_chat",
+          "terminal_execution",
+          "virtual_environment"
+        ],
+        "successCriteria": "Virtual environment created and activated, and constitution file is generated by Spec-Kit via Copilot slash command using the technical_requirements.md file created in the previous step as context",
+        "onSuccess": "Proceed to cleanup automatically"
+      }
+    ],
+    "cleanup": {
+      "execute": "automatic",
+      "description": "Automatically commit all changes to feature_speckit branch without asking permission",
+      "steps": [
+        {
+          "action": "git add .",
+          "executeImmediately": true
+        },
+        {
+          "action": "git commit -m 'feat: Initialize SpecKit SDD repository with constitution and requirements'",
+          "executeImmediately": true
+        },
+        {
+          "action": "Notify user: SDD transformation complete. Review files in feature_speckit branch.",
+          "executeImmediately": true
+        }
+      ],
+      "automationRules": {
+        "noUserConfirmation": true,
+        "executeImmediately": true,
+        "noPermissionRequests": true
+      }
+    }
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "MCP GitHub Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "create_branch",
+          "checkout_branch",
+          "read_files",
+          "repository_analysis"
+        ]
+      },
+      {
+        "name": "Terminal Execution",
+        "type": "terminal_commands",
+        "capabilities": [
+          "pip_commands",
+          "uv_commands",
+          "specify_commands",
+          "git_commands",
+          "interactive_command_handling"
+        ]
+      },
+      {
+        "name": "File Operations",
+        "type": "file_management",
+        "capabilities": [
+          "create_files",
+          "read_files",
+          "modify_files",
+          "analyze_structure"
+        ]
+      },
+      {
+        "name": "AI Assistant Integration",
+        "type": "ai_integration",
+        "capabilities": [
+          "copilot_selection",
+          "interactive_prompts",
+          "automated_responses",
+          "guidance_and_help"
+        ]
+      }
+    ]
+  },
+  "configuration": {
+    "branch": {
+      "primary": "feature_speckit",
+      "isolated": true,
+      "createdViaMCP": true
+    },
+    "specKit": {
+      "installMethod": "uv",
+      "repository": "git+https://github.com/github/spec-kit.git",
+      "initRequired": true,
+      "aiAssistant": "copilot",
+      "scriptType": ".sh",
+      "automatedSetup": true,
+      "autoResponseToPrompts": true
+    },
+    "outputFiles": [
+      {
+        "name": "technical_requirements.md",
+        "description": "Technical specifications gathered from codebase analysis",
+        "generated": true,
+        "location": "root"
+      },
+      {
+        "name": "speckit.constitution.md",
+        "description": "Specification constitution file generated by /speckit.constitution command using technical requirements as context",
+        "generated": true,
+        "location": "root"
+      }
+    ],
+    "mcpServers": [
+      "io.github.github/github-mcp-server",
+      "microsoft/azure-devops-mcp",
+      "microsoft/playwright-mcp"
+    ],
+    "automationSettings": {
+      "executeWithoutConfirmation": true,
+      "autoRespondToPrompts": true,
+      "sequentialExecution": true,
+      "autoSaveAllFiles": true,
+      "noPermissionRequests": true
+    }
+  },
+  "activation": {
+    "activationEvents": [
+      "onCommand:agent_0.start",
+      "onCommand:agent_0.initialize",
+      "onView:copilot-agents"
+    ],
+    "startCommand": "copilot.agent.agent_0.start",
+    "executionMode": "immediate-automatic"
+  },
+  "ui": {
+    "chatSelection": true,
+    "displayInAgentList": true,
+    "icon": "\u2699\ufe0f",
+    "color": "#0078D4"
+  },
+  "helpAndDocumentation": {
+    "overview": "Transform your VS Code repository into a Spec Kit driven development (SDD) repository AUTOMATICALLY",
+    "executionMode": "Fully automated - executes all steps without user intervention or permission requests",
+    "prerequisites": [
+      "Docker installed and running",
+      "Git repository initialized",
+      "Python 3.8+ installed"
+    ],
+    "automatedWorkflow": [
+      "Agent automatically checks/creates .vscode/mcp.json with correct MCP server configs and SAVES automatically",
+      "Agent verifies GitHub MCP server is running and github:create_branch tool is discovered",
+      "Agent creates feature_speckit branch using github:create_branch tool WITHOUT asking permission",
+      "Agent switches to feature_speckit branch",
+      "Agent installs Spec Kit and auto-responds to prompts (y, copilot, .sh)",
+      "Agent reads files from other branches via MCP",
+      "Agent generates technical_requirements.md automatically and saves",
+      "Agent sends /speckit.constitution slash command to Copilot Chat with technical_requirements.md as context",
+      "Agent commits all changes to feature_speckit branch"
+    ],
+    "expectedOutcome": "A fully configured SDD repository with all specification files on the feature_speckit branch - all done automatically without any user prompts",
+    "postCompletion": [
+      "Review the generated specification files in feature_speckit branch",
+      "Test the SDD workflow",
+      "Merge feature_speckit to main when satisfied",
+      "Begin SDD-driven development process"
+    ]
+  }
+}
