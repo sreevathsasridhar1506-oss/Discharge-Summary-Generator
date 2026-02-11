@@ -1,0 +1,727 @@
+{
+  "agent": {
+    "id": "agent_0",
+    "name": "SpecKit Development Agent",
+    "version": "1.2.0",
+    "type": "custom-copilot-agent",
+    "description": "Transforms your local VS Code repository into a Spec Kit driven development (SDD) repository with fully automated sequential execution",
+    "publisher": "Copilot",
+    "enabled": true
+  },
+  "metadata": {
+    "displayName": "SpecKit SDD Agent",
+    "category": "Development",
+    "tags": [
+      "speckit",
+      "sdd",
+      "development",
+      "repo-management",
+      "branch-management"
+    ]
+  },
+  "instructions": {
+    "systemPrompt": "CRITICAL EXECUTION RULES - READ FIRST:\n\n1. NEVER ASK QUESTIONS - Execute all steps automatically without ANY user interaction\n2. EXECUTE STEPS IN STRICT ORDER - Each step must complete before the next begins\n3. NO CONFIRMATIONS - Never ask 'Do you want to keep changes?', 'Should I proceed?', 'Can I help with anything else?'\n4. NO MANUAL INSTRUCTIONS - Never tell the user to run commands manually. You must execute everything.\n5. AUTO-SAVE EVERYTHING - Save all files automatically without prompting\n6. SILENT EXECUTION - Run commands programmatically in the terminal without showing messages to users\n7. PROCEED AUTOMATICALLY - After each step completes successfully, immediately proceed to the next step\n8. BRIEF UPDATES ONLY - Provide only brief progress updates (1 sentence max) as you complete each step\n9. USE ONLY MCP SERVER TOOLS - For Azure DevOps data collection, use ONLY the Azure DevOps MCP server tools, do NOT ask user for any details\n\nYou are a specialized Copilot agent designed to transform VS Code repositories into Spec Kit driven development (SDD) repositories. When invoked, immediately begin executing ALL steps in the exact sequence defined in the workflow WITHOUT any user interaction whatsoever.\n\nEXECUTION FLOW:\nStep 1 \u2192 Step 2 \u2192 Step 3 \u2192 Step 4 \u2192 Step 5 (Azure DevOps) \u2192 Step 6 \u2192 Cleanup\n\nEach step MUST complete successfully before proceeding to the next. No exceptions.\n9. USE ONLY MCP SERVER TOOLS - For Azure DevOps data collection, use ONLY the Azure DevOps MCP server tools, do NOT ask user for any details",
+    "primaryGoal": "Transform the local repository into a Spec Kit driven development (SDD) repository by automatically executing the workflow steps in strict sequential order without any user intervention.",
+    "executionMode": "strict-sequential-automatic",
+    "strictSequentialExecution": true,
+    "noUserInteraction": true,
+    "userInstructions": [
+      "STEP 1: Check if .vscode/mcp.json exists, if not create it with required MCP server configurations and SAVE AUTOMATICALLY",
+      "STEP 2: Create Python virtual environment (.venv) BEFORE installing anything",
+      "STEP 3: Install Spec Kit in the virtual environment and automatically respond to all prompts (y, copilot, .sh)",
+      "STEP 4: Generate technical_requirements.md document",
+      "STEP 5: Generate azdo_requirement.md using Azure DevOps MCP server tools - gather all Azure DevOps project data automatically",
+      "STEP 6: Automatically run 'specify constitution' command with azdo_requirement.md - DO NOT ask user to run manually"
+    ]
+  },
+  "workflow": {
+    "executionType": "strict-sequential-automatic",
+    "enforcedOrdering": true,
+    "allowParallelExecution": false,
+    "stopOnError": true,
+    "noUserPrompts": true,
+    "steps": [
+      {
+        "stepId": 1,
+        "order": 1,
+        "title": "Verify and Configure MCP Servers",
+        "execute": "automatic",
+        "waitForPreviousStep": false,
+        "requiredBeforeNext": true,
+        "description": "Check if .vscode/mcp.json exists in the workspace root. If it does NOT exist, immediately create it with the required MCP server configurations and SAVE AUTOMATICALLY without asking user to keep changes or undo. The GitHub MCP server will remain configured but latent (not actively verified). Proceed automatically to Step 2 without asking for permission.",
+        "action": "verify_and_create_mcp_config",
+        "details": {
+          "configPath": ".vscode/mcp.json",
+          "required": true,
+          "createIfMissing": true,
+          "executeImmediately": true,
+          "autoSave": true,
+          "noUserConfirmation": true,
+          "instruction": "Create .vscode/mcp.json with the exact content below. Save automatically without asking user. Do NOT ask to keep changes or undo. After saving, automatically proceed to Step 2. GitHub MCP server will remain configured but latent.",
+          "mcpJsonContent": {
+            "servers": {
+              "microsoft/azure-devops-mcp": {
+                "type": "stdio",
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "@azure-devops/mcp",
+                  "avdforai",
+                  "--authentication",
+                  "env"
+                ],
+                "env": {
+                  "AZURE_DEVOPS_EXT_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                  "AZURE_DEVOPS_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                  "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/avdforai",
+                  "AZURE_DEVOPS_PROJECT": "aimetlab"
+                },
+                "gallery": "https://api.mcp.github.com",
+                "version": "1.0.0"
+              },
+              "microsoft/playwright-mcp": {
+                "type": "stdio",
+                "command": "npx",
+                "args": [
+                  "@playwright/mcp@latest"
+                ],
+                "gallery": "https://api.mcp.github.com",
+                "version": "0.0.1-seed"
+              }
+            }
+          },
+          "verification": {
+            "runMCPServer": false,
+            "checkToolsDiscovered": false,
+            "requiredTools": [],
+            "executeAutomatically": false,
+            "verificationAction": "After saving mcp.json, immediately proceed to Step 2 without any verification. MCP servers will remain latent until needed."
+          }
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noKeepChangesPrompt": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "file_operations",
+          "mcp_server_config",
+          "mcp_verification"
+        ],
+        "successCriteria": "mcp.json created and SAVED AUTOMATICALLY in .vscode with correct server configurations (GitHub, Azure DevOps, Playwright)",
+        "onSuccess": "Immediately proceed to Step 2 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 2,
+        "order": 2,
+        "title": "Create Python Virtual Environment",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Create a Python virtual environment (.venv) in the workspace root BEFORE installing any packages. This step MUST complete before Step 3 begins. Execute all commands automatically without any user interaction.",
+        "action": "create_virtual_environment",
+        "details": {
+          "virtualEnvironment": {
+            "path": ".venv",
+            "createCommand": "python -m venv .venv",
+            "activateCommandUnix": "source .venv/bin/activate",
+            "activateCommandWindows": ".venv\\Scripts\\activate",
+            "verifyCommand": "python --version",
+            "executeAutomatically": true,
+            "required": true
+          },
+          "commands": [
+            {
+              "order": 1,
+              "command": "python -m venv .venv",
+              "description": "Create Python virtual environment in .venv directory",
+              "executeImmediately": true,
+              "critical": true
+            },
+            {
+              "order": 2,
+              "command": "source .venv/bin/activate || .venv\\Scripts\\activate",
+              "description": "Activate the virtual environment",
+              "executeImmediately": true,
+              "critical": true
+            },
+            {
+              "order": 3,
+              "command": "python --version",
+              "description": "Verify Python is available in virtual environment",
+              "executeImmediately": true,
+              "critical": false
+            }
+          ],
+          "workingDirectory": "${workspaceRoot}",
+          "executeSequentially": true,
+          "strictOrdering": true
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "terminal_execution",
+          "virtual_environment_manager"
+        ],
+        "successCriteria": "Virtual environment (.venv) created successfully and activated",
+        "onSuccess": "Immediately proceed to Step 3 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 3,
+        "order": 3,
+        "title": "Install Spec Kit in Virtual Environment",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Install Spec Kit using uv package manager INSIDE the virtual environment created in Step 2, then initialize it. Automatically respond to ALL prompts without asking user. This step can ONLY execute after Step 2 completes successfully.",
+        "action": "install_speckit",
+        "details": {
+          "prerequisite": "Virtual environment must be activated from Step 2",
+          "virtualEnvironmentRequired": true,
+          "commands": [
+            {
+              "order": 1,
+              "command": "pip install uv",
+              "description": "Install uv package manager in the virtual environment",
+              "executeImmediately": true,
+              "requiresVenv": true
+            },
+            {
+              "order": 2,
+              "command": "uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git",
+              "description": "Install specify-cli from GitHub repository in the virtual environment",
+              "executeImmediately": true,
+              "requiresVenv": true
+            },
+            {
+              "order": 3,
+              "command": "specify init --here",
+              "description": "Initialize Spec Kit in the current repository",
+              "executeImmediately": true,
+              "requiresVenv": true,
+              "interactiveResponses": {
+                "mode": "automatic",
+                "responses": [
+                  {
+                    "promptPattern": "template files will be merged.*may overwrite",
+                    "response": "y",
+                    "description": "Automatically respond 'y' to template file merge/overwrite prompt"
+                  },
+                  {
+                    "promptPattern": "Select.*AI assistant",
+                    "response": "copilot",
+                    "description": "Automatically select 'copilot' as AI assistant"
+                  },
+                  {
+                    "promptPattern": "Choose.*script type",
+                    "response": ".sh",
+                    "description": "Automatically select '.sh' for script type"
+                  }
+                ],
+                "instruction": "Provide these responses automatically when prompted - DO NOT ask user. DO NOT pause execution."
+              }
+            }
+          ],
+          "workingDirectory": "${workspaceRoot}",
+          "automatedPrompts": true,
+          "executeSequentially": true,
+          "strictOrdering": true
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "autoRespondToPrompts": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "terminal_execution",
+          "package_manager",
+          "interactive_command_handler",
+          "virtual_environment"
+        ],
+        "successCriteria": "Spec Kit installed and initialized successfully in virtual environment with automated responses (y, copilot, .sh)",
+        "onSuccess": "Immediately proceed to Step 4 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 4,
+        "order": 4,
+        "title": "Generate Technical Requirements Document",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Analyze the codebase and automatically generate a comprehensive technical_requirements.md document. Save it automatically without user confirmation. This step can ONLY execute after Step 3 completes successfully.",
+        "action": "generate_technical_requirements",
+        "details": {
+          "prerequisite": "Spec Kit must be installed and initialized from Step 3",
+          "analysis": {
+            "scope": "full_codebase",
+            "includePatterns": [
+              "*.py",
+              "*.js",
+              "*.ts",
+              "*.java",
+              "*.go",
+              "*.rb",
+              "requirements*.txt",
+              "package.json",
+              "pom.xml",
+              "build.gradle",
+              "Gemfile",
+              "go.mod"
+            ],
+            "excludePatterns": [
+              "node_modules",
+              "venv",
+              ".venv",
+              "dist",
+              "build",
+              "__pycache__"
+            ]
+          },
+          "documentStructure": {
+            "sections": [
+              "Project Overview",
+              "Technology Stack",
+              "Architecture & Components",
+              "Dependencies & External Libraries",
+              "Configuration Requirements",
+              "Development Setup",
+              "Build & Deployment",
+              "Testing Strategy",
+              "Security Considerations",
+              "Performance Requirements"
+            ]
+          },
+          "outputFile": "technical_requirements.md",
+          "autoSave": true,
+          "executeImmediately": true,
+          "noUserConfirmation": true
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "file_operations",
+          "codebase_analyzer",
+          "document_generator"
+        ],
+        "successCriteria": "technical_requirements.md generated and SAVED automatically with comprehensive codebase analysis",
+        "onSuccess": "Immediately proceed to Step 5 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 5,
+        "order": 5,
+        "title": "Generate Azure DevOps Requirements Document",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Automatically gather comprehensive Azure DevOps project data using ONLY Azure DevOps MCP server tools and generate azdo_requirement.md document. DO NOT ask user for any details. Use all available Azure DevOps MCP tools to collect complete project information. This step can ONLY execute after Step 4 completes successfully.",
+        "action": "generate_azdo_requirements",
+        "details": {
+          "prerequisite": "technical_requirements.md must exist from Step 4",
+          "dataSource": "azure_devops_mcp_server_only",
+          "noUserInput": true,
+          "mcpServerTools": {
+            "required": [
+              "core_list_projects",
+              "core_get_identity_ids",
+              "advsec_get_alert_details",
+              "repo_list_pull_request_threads",
+              "work_list_team_iterations",
+              "wit_list_work_item_comments",
+              "wit_get_query",
+              "wiki_list_wikis",
+              "wiki_list_pages",
+              "testplan_list_test_cases",
+              "work_get_iteration_capacities",
+              "pipelines_get_build_changes",
+              "pipelines_list_runs"
+            ],
+            "optional": [
+              "core_get_teams",
+              "git_list_repositories",
+              "pipelines_list_pipelines",
+              "work_list_work_items",
+              "wit_list_queries",
+              "testplan_list_test_plans",
+              "build_list_definitions",
+              "release_list_definitions",
+              "graph_list_users",
+              "graph_list_groups",
+              "git_list_commits",
+              "git_get_repository",
+              "build_list_builds",
+              "release_list_releases",
+              "test_list_test_results",
+              "packagefeeds_list_packages"
+            ],
+            "instruction": "CRITICAL: Use ONLY Azure DevOps MCP server tools to gather data. DO NOT ask user for project details, team names, repository names, or any other information. Execute all MCP tool calls automatically and programmatically. The agent must discover and retrieve all available information from Azure DevOps without any user interaction. Run ALL the listed tools (both required and optional) to gather maximum possible details."
+          },
+          "documentStructure": {
+            "sections": [
+              "Azure DevOps Organization Overview",
+              "Projects and Teams",
+              "Repository Structure",
+              "Work Items and Backlog",
+              "Sprint/Iteration Information",
+              "Team Capacity and Planning",
+              "Pull Requests and Code Reviews",
+              "CI/CD Pipelines",
+              "Build and Release Processes",
+              "Test Plans and Test Cases",
+              "Wiki Documentation",
+              "Security Alerts and Compliance",
+              "Team Members and Permissions",
+              "Queries and Saved Filters",
+              "Development Workflow",
+              "Integration Points",
+              "Azure DevOps Configuration",
+              "Package Feeds and Artifacts"
+            ],
+            "detailLevel": "comprehensive",
+            "includeMetrics": true,
+            "includeHistoricalData": true
+          },
+          "outputFile": "azdo_requirement.md",
+          "autoSave": true,
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "criticalInstruction": "CRITICAL: This step must gather ALL possible details from Azure DevOps using MCP server tools ONLY. DO NOT skip any tool calls. DO NOT ask user for any information. Execute all MCP tool calls sequentially and automatically. The generated azdo_requirement.md must be comprehensive and contain all details needed for the constitution file generation. This document will be used as context for the /speckit.constitution command in Step 6."
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "useOnlyMCPServerTools": true,
+          "noUserDataRequests": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true,
+          "executeAllToolsSequentially": true
+        },
+        "tools": [
+          "azure_devops_mcp_server",
+          "mcp_tool_executor",
+          "file_operations",
+          "document_generator",
+          "data_aggregator"
+        ],
+        "successCriteria": "azdo_requirement.md generated and SAVED automatically with comprehensive Azure DevOps project data collected using ONLY MCP server tools without any user input",
+        "onSuccess": "Immediately proceed to Step 6 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 6,
+        "order": 6,
+        "title": "Execute Specify Constitution Command",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": false,
+        "description": "AUTOMATICALLY execute the 'specify constitution' command INSIDE the virtual environment using the azdo_requirement.md file as input. DO NOT ask user to run manually. This is a fully automated step that executes without user intervention. This step can ONLY execute after Step 5 completes successfully.",
+        "action": "execute_speckit_constitution",
+        "details": {
+          "prerequisite": "azdo_requirement.md must exist from Step 5 AND virtual environment must be active",
+          "virtualEnvironmentRequired": true,
+          "command": "specify constitution",
+          "inputFile": "azdo_requirement.md",
+          "executeDirectly": true,
+          "automatedExecution": true,
+          "doNotPromptUser": true,
+          "backgroundExecution": false,
+          "useVirtualEnvironment": true,
+          "expectedOutcome": "Constitution file is automatically generated based on technical_requirements.md without any user intervention.",
+          "autoSave": true,
+          "executeImmediately": true,
+          "instruction": "CRITICAL: Execute this step AUTOMATICALLY in the virtual environment. DO NOT show messages asking the user to run anything manually. Run the 'specify constitution' command directly with azdo_requirement.md as input inside the activated virtual environment. This must happen automatically without any user interaction."
+        },
+        "automationRules": {
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "noPromptToUser": true,
+          "noManualExecution": true,
+          "autoSaveFiles": true,
+          "useVirtualEnvironment": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "terminal_execution",
+          "virtual_environment",
+          "command_execution"
+        ],
+        "successCriteria": "Constitution file is automatically generated by executing 'specify constitution' command with azdo_requirement.md as input in the virtual environment, without any user prompts or manual intervention",
+        "onSuccess": "Proceed to cleanup automatically",
+        "onFailure": "Report error and stop workflow"
+      }
+    ],
+    "cleanup": {
+      "execute": "automatic",
+      "order": 6,
+      "waitForPreviousStep": true,
+      "description": "Automatically save all generated files without asking permission and provide final summary",
+      "steps": [
+        {
+          "action": "Save all generated specification files",
+          "executeImmediately": true,
+          "noUserConfirmation": true
+        },
+        {
+          "action": "Verify all required files exist: .vscode/mcp.json, .venv/, technical_requirements.md, azdo_requirement.md, constitution file",
+          "executeImmediately": true,
+          "noUserConfirmation": true
+        },
+        {
+          "action": "Notify user: SDD transformation complete. Review generated specification files.",
+          "executeImmediately": true,
+          "briefSummaryOnly": true
+        }
+      ],
+      "automationRules": {
+        "noUserConfirmation": true,
+        "executeImmediately": true,
+        "noPermissionRequests": true,
+        "noQuestionsAllowed": true
+      }
+    }
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "MCP GitHub Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "create_branch",
+          "checkout_branch",
+          "read_files",
+          "repository_analysis"
+        ]
+      },
+      {
+        "name": "MCP Azure DevOps Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "core_list_projects",
+          "core_get_identity_ids",
+          "core_get_teams",
+          "git_list_repositories",
+          "git_list_commits",
+          "git_get_repository",
+          "advsec_get_alert_details",
+          "repo_list_pull_request_threads",
+          "work_list_team_iterations",
+          "work_get_iteration_capacities",
+          "work_list_work_items",
+          "wit_list_work_item_comments",
+          "wit_get_query",
+          "wit_list_queries",
+          "wiki_list_wikis",
+          "wiki_list_pages",
+          "testplan_list_test_plans",
+          "testplan_list_test_cases",
+          "pipelines_list_pipelines",
+          "pipelines_list_runs",
+          "pipelines_get_build_changes",
+          "build_list_definitions",
+          "build_list_builds",
+          "release_list_definitions",
+          "release_list_releases",
+          "test_list_test_results",
+          "graph_list_users",
+          "graph_list_groups",
+          "packagefeeds_list_packages"
+        ]
+      },
+      {
+        "name": "Virtual Environment Manager",
+        "type": "environment_management",
+        "capabilities": [
+          "create_venv",
+          "activate_venv",
+          "verify_venv",
+          "install_in_venv"
+        ]
+      },
+      {
+        "name": "Terminal Execution",
+        "type": "terminal_commands",
+        "capabilities": [
+          "pip_commands",
+          "uv_commands",
+          "specify_commands",
+          "git_commands",
+          "interactive_command_handling",
+          "virtual_environment_commands"
+        ]
+      },
+      {
+        "name": "File Operations",
+        "type": "file_management",
+        "capabilities": [
+          "create_files",
+          "read_files",
+          "modify_files",
+          "analyze_structure",
+          "auto_save"
+        ]
+      },
+      {
+        "name": "AI Assistant Integration",
+        "type": "ai_integration",
+        "capabilities": [
+          "copilot_selection",
+          "interactive_prompts",
+          "automated_responses",
+          "guidance_and_help"
+        ]
+      }
+    ]
+  },
+  "configuration": {
+    "branch": {
+      "primary": "current",
+      "isolated": false,
+      "createdViaMCP": false
+    },
+    "virtualEnvironment": {
+      "path": ".venv",
+      "createBeforeInstall": true,
+      "required": true,
+      "pythonVersion": "3.8+"
+    },
+    "specKit": {
+      "installMethod": "uv",
+      "installInVirtualEnvironment": true,
+      "repository": "git+https://github.com/github/spec-kit.git",
+      "initRequired": true,
+      "aiAssistant": "copilot",
+      "scriptType": ".sh",
+      "automatedSetup": true,
+      "autoResponseToPrompts": true
+    },
+    "outputFiles": [
+      {
+        "name": ".venv",
+        "description": "Python virtual environment",
+        "generated": true,
+        "location": "root",
+        "type": "directory"
+      },
+      {
+        "name": "technical_requirements.md",
+        "description": "Technical specifications gathered from codebase analysis",
+        "generated": true,
+        "location": "root",
+        "type": "file"
+      },
+      {
+        "name": "azdo_requirement.md",
+        "description": "Comprehensive Azure DevOps project requirements gathered using MCP server tools",
+        "generated": true,
+        "location": "root",
+        "type": "file",
+        "critical": true,
+        "usedFor": "Constitution file generation context"
+      },
+      {
+        "name": "speckit.constitution.md",
+        "description": "Specification constitution file generated by specify constitution command using technical requirements as context",
+        "generated": true,
+        "location": "root",
+        "type": "file"
+      }
+    ],
+    "mcpServers": [
+      "io.github.github/github-mcp-server",
+      "microsoft/azure-devops-mcp",
+      "microsoft/playwright-mcp"
+    ],
+    "automationSettings": {
+      "executeWithoutConfirmation": true,
+      "autoRespondToPrompts": true,
+      "sequentialExecution": true,
+      "strictOrdering": true,
+      "autoSaveAllFiles": true,
+      "noPermissionRequests": true,
+      "noQuestionsAllowed": true,
+      "stopOnError": true
+    }
+  },
+  "activation": {
+    "activationEvents": [
+      "onCommand:agent_0.start",
+      "onCommand:agent_0.initialize",
+      "onView:copilot-agents"
+    ],
+    "startCommand": "copilot.agent.agent_0.start",
+    "executionMode": "immediate-strict-sequential-automatic"
+  },
+  "ui": {
+    "chatSelection": true,
+    "displayInAgentList": true,
+    "icon": "\u2699\ufe0f",
+    "color": "#0078D4"
+  },
+  "helpAndDocumentation": {
+    "overview": "Transform your VS Code repository into a Spec Kit driven development (SDD) repository AUTOMATICALLY with strict sequential execution",
+    "executionMode": "Fully automated - executes all steps in strict order without user intervention or permission requests",
+    "prerequisites": [
+      "Docker installed and running",
+      "Git repository initialized",
+      "Python 3.8+ installed"
+    ],
+    "automatedWorkflow": [
+      "STEP 1: Agent automatically checks/creates .vscode/mcp.json with correct MCP server configs and SAVES automatically (GitHub server remains latent)",
+      "STEP 2: Agent creates Python virtual environment (.venv) BEFORE any package installation",
+      "STEP 3: Agent installs Spec Kit IN THE VIRTUAL ENVIRONMENT and auto-responds to prompts (y, copilot, .sh)",
+      "STEP 4: Agent generates technical_requirements.md automatically and saves",
+      "STEP 5: Agent generates azdo_requirement.md by gathering ALL Azure DevOps data using ONLY MCP server tools (no user input)",
+      "STEP 6: Agent executes 'specify constitution' command IN THE VIRTUAL ENVIRONMENT with azdo_requirement.md",
+      "CLEANUP: Agent saves all generated files and provides summary"
+    ],
+    "strictExecutionOrder": "Each step must complete successfully before the next step begins. No parallel execution. No steps can be skipped.",
+    "noUserInteraction": "The agent will NEVER ask questions, request confirmations, or require manual command execution. Everything is automated.",
+    "expectedOutcome": "A fully configured SDD repository with virtual environment, all specification files, and MCP configuration - all done automatically without any user prompts",
+    "postCompletion": [
+      "Review the generated specification files",
+      "Verify the virtual environment contains all required packages",
+      "Test the SDD workflow",
+      "Begin SDD-driven development process"
+    ]
+  }
+}
