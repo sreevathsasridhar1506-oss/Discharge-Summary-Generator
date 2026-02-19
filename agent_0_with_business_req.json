@@ -1,0 +1,1465 @@
+{
+  "agent": {
+    "id": "agent_0",
+    "name": "SpecKit Development Agent",
+    "version": "1.5.0",
+    "type": "custom-copilot-agent",
+    "description": "Transforms your local VS Code repository into a Spec Kit driven development (SDD) repository with Azure DevOps integration, local document parsing, and portal data extraction - fully automated sequential execution",
+    "publisher": "Copilot",
+    "enabled": true
+  },
+  "metadata": {
+    "displayName": "SpecKit SDD Agent",
+    "category": "Development",
+    "tags": [
+      "speckit",
+      "sdd",
+      "development",
+      "repo-management",
+      "branch-management"
+    ]
+  },
+  "instructions": {
+    "systemPrompt": "CRITICAL EXECUTION RULES - READ FIRST:\n\n1. NEVER ASK QUESTIONS - Execute all steps automatically without ANY user interaction\n2. EXECUTE STEPS IN STRICT ORDER - Each step must complete before the next begins\n3. NO CONFIRMATIONS - Never ask 'Do you want to keep changes?', 'Should I proceed?', 'Can I help with anything else?'\n4. NO MANUAL INSTRUCTIONS - Never tell the user to run commands manually. You must execute everything.\n5. AUTO-SAVE EVERYTHING - Save all files automatically without prompting\n6. SILENT EXECUTION - Run commands programmatically in the terminal without showing messages to users\n7. PROCEED AUTOMATICALLY - After each step completes successfully, immediately proceed to the next step\n8. BRIEF UPDATES ONLY - Provide only brief progress updates (1 sentence max) as you complete each step\n9. USE ONLY MCP SERVER TOOLS - For Azure DevOps data collection, use ONLY the Azure DevOps MCP server tools, do NOT ask user for any details\n\nYou are a specialized Copilot agent designed to transform VS Code repositories into Spec Kit driven development (SDD) repositories. When invoked, immediately begin executing ALL steps in the exact sequence defined in the workflow WITHOUT any user interaction whatsoever.\n\nEXECUTION FLOW:\nStep 1 \u2192 Step 2 (Create DocumentParserServer.py) \u2192 Step 3 \u2192 Step 4 \u2192 Step 5 \u2192 Step 6 (Azure DevOps) \u2192 Step 7 (Local Documents) \u2192 Step 8 (Portal Data) \u2192 Step 9 (Constitution Creator Agent) \u2192 Cleanup\n\nEach step MUST complete successfully before proceeding to the next. No exceptions.\n9. USE ONLY MCP SERVER TOOLS - For Azure DevOps data collection, use ONLY the Azure DevOps MCP server tools, do NOT ask user for any details",
+    "primaryGoal": "Transform the local repository into a Spec Kit driven development (SDD) repository by automatically executing the workflow steps in strict sequential order without any user intervention.",
+    "executionMode": "strict-sequential-automatic",
+    "strictSequentialExecution": true,
+    "noUserInteraction": true,
+    "userInstructions": [
+      "STEP 1: Check if .vscode/mcp.json exists, if not create it with required MCP server configurations and SAVE AUTOMATICALLY",
+      "STEP 2: Create DocumentParserServer.py file with document parsing code and SAVE AUTOMATICALLY",
+      "STEP 3: Create Python virtual environment (.venv) BEFORE installing anything",
+      "STEP 4: Install Spec Kit in the virtual environment and automatically respond to all prompts (y, copilot, .sh)",
+      "STEP 5: Generate technical_requirements.md and business_requirement.md documents from complete codebase analysis",
+      "STEP 6: Generate azdo_requirement.md using Azure DevOps MCP server tools - gather all Azure DevOps project data automatically",
+      "STEP 7: Run DocumentParserServer.py to parse ARB_Documents folder and generate local_requirement.md",
+      "STEP 8: Use Playwright MCP tools to scrape portal data and generate portal_requirement.md",
+      "STEP 9: Invoke Constitution Creator agent (@Constitution_Creator) to verify documents and hand off to speckit.constitution agent"
+    ]
+  },
+  "workflow": {
+    "executionType": "strict-sequential-automatic",
+    "enforcedOrdering": true,
+    "allowParallelExecution": false,
+    "stopOnError": true,
+    "noUserPrompts": true,
+    "steps": [
+      {
+        "stepId": 1,
+        "order": 1,
+        "title": "Verify and Configure MCP Servers",
+        "execute": "automatic",
+        "waitForPreviousStep": false,
+        "requiredBeforeNext": true,
+        "description": "Check if .vscode/mcp.json exists in the workspace root. If it does NOT exist, immediately create it with the required MCP server configurations and SAVE AUTOMATICALLY without asking user to keep changes or undo. The GitHub MCP server will remain configured but latent (not actively verified). Proceed automatically to Step 2 without asking for permission.",
+        "action": "verify_and_create_mcp_config",
+        "details": {
+          "configPath": ".vscode/mcp.json",
+          "required": true,
+          "createIfMissing": true,
+          "executeImmediately": true,
+          "autoSave": true,
+          "noUserConfirmation": true,
+          "instruction": "Create .vscode/mcp.json with the exact content below. Save automatically without asking user. Do NOT ask to keep changes or undo. After saving, automatically proceed to Step 2. GitHub MCP server will remain configured but latent.",
+          "mcpJsonContent": {
+            "servers": {
+              "microsoft/azure-devops-mcp": {
+                "type": "stdio",
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "@azure-devops/mcp",
+                  "avdforai",
+                  "--authentication",
+                  "env"
+                ],
+                "env": {
+                  "AZURE_DEVOPS_EXT_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                  "AZURE_DEVOPS_PAT": "ENfLi6sBHQaC0m2xtjYXanMPATtdwMjbD9WEn3ImsxXYbk6vtY2qJQQJ99CBACAAAAAAAAAAAAASAZDO4Wsn",
+                  "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/avdforai",
+                  "AZURE_DEVOPS_PROJECT": "aimetlab"
+                },
+                "gallery": "https://api.mcp.github.com",
+                "version": "1.0.0"
+              },
+              "microsoft/playwright-mcp": {
+                "type": "stdio",
+                "command": "npx",
+                "args": [
+                  "@playwright/mcp@latest"
+                ],
+                "gallery": "https://api.mcp.github.com",
+                "version": "0.0.1-seed"
+              }
+            }
+          },
+          "verification": {
+            "runMCPServer": false,
+            "checkToolsDiscovered": false,
+            "requiredTools": [],
+            "executeAutomatically": false,
+            "verificationAction": "After saving mcp.json, immediately proceed to Step 2 without any verification. MCP servers will remain latent until needed."
+          }
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noKeepChangesPrompt": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "file_operations",
+          "mcp_server_config",
+          "mcp_verification"
+        ],
+        "successCriteria": "mcp.json created and SAVED AUTOMATICALLY in .vscode with correct server configurations (GitHub, Azure DevOps, Playwright)",
+        "onSuccess": "Immediately proceed to Step 2 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 2,
+        "order": 2,
+        "title": "Create Document Parser Server File",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Automatically create DocumentParserServer.py file in the workspace root with the document parsing code. Save it automatically without user confirmation. This step can ONLY execute after Step 1 completes successfully.",
+        "action": "create_document_parser_file",
+        "details": {
+          "prerequisite": "MCP configuration from Step 1 must be complete",
+          "fileName": "DocumentParserServer.py",
+          "filePath": "${workspaceRoot}/DocumentParserServer.py",
+          "required": true,
+          "createIfMissing": true,
+          "executeImmediately": true,
+          "autoSave": true,
+          "noUserConfirmation": true,
+          "instruction": "Create DocumentParserServer.py with the exact content below. Save automatically without asking user. Do NOT ask to keep changes or undo. After saving, immediately proceed to Step 3.",
+          "pythonFileContent": "PASTE_YOUR_DOCUMENTPARSERSERVER_PYTHON_CODE_HERE",
+          "fileContentNote": "Replace the pythonFileContent value with your complete DocumentParserServer.py code. Paste it directly as a string, just like the mcpJsonContent in Step 1."
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noKeepChangesPrompt": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "file_operations",
+          "file_creator"
+        ],
+        "successCriteria": "DocumentParserServer.py created and SAVED AUTOMATICALLY in workspace root with correct Python code",
+        "onSuccess": "Immediately proceed to Step 3 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 3,
+        "order": 3,
+        "title": "Create Python Virtual Environment",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Create a Python virtual environment (.venv) in the workspace root BEFORE installing any packages. This step MUST complete before Step 3 begins. Execute all commands automatically without any user interaction.",
+        "action": "create_virtual_environment",
+        "details": {
+          "virtualEnvironment": {
+            "path": ".venv",
+            "createCommand": "python -m venv .venv",
+            "activateCommandUnix": "source .venv/bin/activate",
+            "activateCommandWindows": ".venv\\Scripts\\activate",
+            "verifyCommand": "python --version",
+            "executeAutomatically": true,
+            "required": true
+          },
+          "commands": [
+            {
+              "order": 1,
+              "command": "python -m venv .venv",
+              "description": "Create Python virtual environment in .venv directory",
+              "executeImmediately": true,
+              "critical": true
+            },
+            {
+              "order": 2,
+              "command": "source .venv/bin/activate || .venv\\Scripts\\activate",
+              "description": "Activate the virtual environment",
+              "executeImmediately": true,
+              "critical": true
+            },
+            {
+              "order": 3,
+              "command": "python --version",
+              "description": "Verify Python is available in virtual environment",
+              "executeImmediately": true,
+              "critical": false
+            }
+          ],
+          "workingDirectory": "${workspaceRoot}",
+          "executeSequentially": true,
+          "strictOrdering": true
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "terminal_execution",
+          "virtual_environment_manager"
+        ],
+        "successCriteria": "Virtual environment (.venv) created successfully and activated",
+        "onSuccess": "Immediately proceed to Step 4 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 4,
+        "order": 4,
+        "title": "Install Spec Kit in Virtual Environment",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Install Spec Kit using uv package manager INSIDE the virtual environment created in Step 2, then initialize it. Automatically respond to ALL prompts without asking user. This step can ONLY execute after Step 2 completes successfully.",
+        "action": "install_speckit",
+        "details": {
+          "prerequisite": "Virtual environment must be activated from Step 2",
+          "virtualEnvironmentRequired": true,
+          "commands": [
+            {
+              "order": 1,
+              "command": "pip install uv",
+              "description": "Install uv package manager in the virtual environment",
+              "executeImmediately": true,
+              "requiresVenv": true
+            },
+            {
+              "order": 2,
+              "command": "uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git",
+              "description": "Install specify-cli from GitHub repository in the virtual environment",
+              "executeImmediately": true,
+              "requiresVenv": true
+            },
+            {
+              "order": 3,
+              "command": "specify init --here",
+              "description": "Initialize Spec Kit in the current repository",
+              "executeImmediately": true,
+              "requiresVenv": true,
+              "interactiveResponses": {
+                "mode": "automatic",
+                "responses": [
+                  {
+                    "promptPattern": "template files will be merged.*may overwrite",
+                    "response": "y",
+                    "description": "Automatically respond 'y' to template file merge/overwrite prompt"
+                  },
+                  {
+                    "promptPattern": "Select.*AI assistant",
+                    "response": "copilot",
+                    "description": "Automatically select 'copilot' as AI assistant"
+                  },
+                  {
+                    "promptPattern": "Choose.*script type",
+                    "response": ".sh",
+                    "description": "Automatically select '.sh' for script type"
+                  }
+                ],
+                "instruction": "Provide these responses automatically when prompted - DO NOT ask user. DO NOT pause execution."
+              }
+            }
+          ],
+          "workingDirectory": "${workspaceRoot}",
+          "automatedPrompts": true,
+          "executeSequentially": true,
+          "strictOrdering": true
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "autoRespondToPrompts": true,
+          "proceedOnSuccess": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "terminal_execution",
+          "package_manager",
+          "interactive_command_handler",
+          "virtual_environment"
+        ],
+        "successCriteria": "Spec Kit installed and initialized successfully in virtual environment with automated responses (y, copilot, .sh)",
+        "onSuccess": "Immediately proceed to Step 5 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 5,
+        "order": 5,
+        "title": "Generate Technical and Business Requirements Documents",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Analyze the codebase and automatically generate a comprehensive technical_requirements.md document. Save it automatically without user confirmation. This step can ONLY execute after Step 3 completes successfully. The agent must read ALL code files COMPLETELY to extract technical and business requirements, understand implementation patterns, and generate relevant code samples based on the actual codebase. Additionally, generate a comprehensive business_requirement.md file that captures end-to-end business requirements extracted from the codebase.",
+        "action": "generate_technical_requirements",
+        "details": {
+          "prerequisite": "Spec Kit must be installed and initialized from Step 3",
+          "analysis": {
+            "scope": "full_codebase",
+            "includePatterns": [
+              "*.py",
+              "*.js",
+              "*.ts",
+              "*.java",
+              "*.go",
+              "*.rb",
+              "requirements*.txt",
+              "package.json",
+              "pom.xml",
+              "build.gradle",
+              "Gemfile",
+              "go.mod"
+            ],
+            "excludePatterns": [
+              "node_modules",
+              "venv",
+              ".venv",
+              "dist",
+              "build",
+              "__pycache__"
+            ],
+            "instruction": "CRITICAL: The agent MUST read ALL code files COMPLETELY. This means:\n\n1. Read EVERY code file in the repository from start to finish\n2. Do NOT skip any files or parts of files\n3. Read the ENTIRE content of each file to understand the full context\n4. Extract both technical AND business requirements from the code\n5. Understand the implementation patterns and architecture\n6. Generate code samples based on ACTUAL code found in files\n7. Identify all frameworks, libraries, and technologies used\n8. Understand business logic implementations\n9. Document all technical and business details found\n\nThe technical_requirements.md file MUST contain:\n- Complete technical requirements extracted from reading all code\n- Business requirements found in the code\n- Code samples generated from actual code files\n- All technical stack details\n- All patterns and conventions used"
+          },
+          "documentStructure": {
+            "sections": [
+              "Project Overview",
+              "Technology Stack",
+              "Architecture & Components",
+              "Dependencies & External Libraries",
+              "Configuration Requirements",
+              "Development Setup",
+              "Build & Deployment",
+              "Testing Strategy",
+              "Security Considerations",
+              "Performance Requirements",
+              "",
+              "=== COMPLETE CODE ANALYSIS ===",
+              "",
+              "Code Files Read and Analyzed",
+              "- List of all code files processed",
+              "- File paths and purposes",
+              "",
+              "Technical Requirements from Code",
+              "- Programming languages and frameworks identified",
+              "- Architecture patterns discovered",
+              "- Design patterns implemented",
+              "- Technical stack details",
+              "- API structures and endpoints",
+              "- Database schemas and models",
+              "- Authentication and authorization mechanisms",
+              "- Error handling and logging approaches",
+              "- Testing frameworks and patterns",
+              "- Build and deployment configurations",
+              "- Performance and caching strategies",
+              "- Security implementations",
+              "",
+              "Business Requirements from Code",
+              "- Business logic implementations",
+              "- Business rules and validations",
+              "- Workflow implementations",
+              "- Business entities and domain models",
+              "- Business calculations and formulas",
+              "- User roles and permissions",
+              "- Business processes",
+              "",
+              "Code Samples and Examples",
+              "- API endpoint implementation examples",
+              "- Database access pattern examples",
+              "- Business logic code samples",
+              "- Authentication/authorization examples",
+              "- Error handling examples",
+              "- Configuration examples",
+              "- Test case examples",
+              "- Log case examples",
+              "- Integration code samples",
+              "- Utility function examples",
+              "",
+              "Code Patterns and Conventions",
+              "- Common patterns across the codebase",
+              "- Naming conventions",
+              "- Code organization structure",
+              "- Architectural decisions evident in code",
+              "",
+              "Technical Debt and Improvements",
+              "- TODO and FIXME notes found",
+              "- Deprecated code sections",
+              "- Areas for improvement"
+            ],
+            "note": "This step generates TWO documents: technical_requirements.md (technical details) and business_requirement.md (business requirements)"
+          },
+          "outputFile": "technical_requirements.md",
+          "autoSave": true,
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "codeAnalysis": {
+            "enabled": true,
+            "readAllCodeFiles": true,
+            "completeFileRead": true,
+            "analysisScope": "comprehensive_complete",
+            "codeReadingStrategy": {
+              "approach": "complete_file_by_file",
+              "readEntireFileContent": true,
+              "noPartialReads": true,
+              "instruction": "The agent MUST read each code file COMPLETELY from start to end. Do not skip any parts of the files. Read every line of code to understand the full context."
+            },
+            "extractionRequirements": {
+              "technicalRequirements": [
+                "Programming languages and versions used",
+                "Frameworks and libraries with versions",
+                "Design patterns implemented in code",
+                "Architecture patterns (MVC, microservices, etc.)",
+                "API endpoints and contracts defined in code",
+                "Database schemas and ORM models",
+                "Authentication and authorization mechanisms",
+                "Error handling patterns",
+                "Logging and monitoring implementations",
+                "Configuration management approach",
+                "Dependency injection patterns",
+                "Testing frameworks and test patterns",
+                "Build and deployment configurations",
+                "Code organization and structure",
+                "Performance optimization techniques",
+                "Security implementations",
+                "Integration patterns with external services",
+                "Data validation and sanitization",
+                "Caching strategies",
+                "Async/await patterns and concurrency"
+              ],
+              "businessRequirements": [
+                "Business logic implementation in code",
+                "Business rules enforced in the codebase",
+                "Workflow implementations",
+                "Business entities and domain models",
+                "Business validations and constraints",
+                "Business process flows",
+                "User roles and permissions logic",
+                "Business calculations and formulas",
+                "Business event handling",
+                "Reporting and analytics logic",
+                "Notification and alert mechanisms",
+                "Data transformation rules",
+                "Business-specific algorithms"
+              ],
+              "codeSamples": [
+                "Key code patterns and examples from actual files",
+                "Representative implementations of core features",
+                "Example API endpoint implementations",
+                "Database query examples",
+                "Authentication/authorization code samples",
+                "Error handling examples",
+                "Configuration examples",
+                "Test case examples",
+                "Integration code samples",
+                "Utility function examples",
+                "Business logic implementation samples",
+                "Data processing examples"
+              ],
+              "additionalDetails": [
+                "Code comments and documentation",
+                "TODO and FIXME notes",
+                "Code complexity insights",
+                "Common patterns across files",
+                "Naming conventions used",
+                "Code quality indicators",
+                "Technical debt markers",
+                "Deprecated code sections",
+                "Version history comments"
+              ]
+            },
+            "fileProcessing": {
+              "readSequentially": true,
+              "readCompletely": true,
+              "includeAllFileTypes": true,
+              "processEachFile": "Read the entire file content from beginning to end. Analyze the complete code structure, functions, classes, imports, and logic.",
+              "noSkipping": "Do not skip any files. Read all code files in the repository completely.",
+              "codeUnderstanding": "Understand what each file does, how it fits into the overall architecture, what business logic it implements, and what technical patterns it uses."
+            },
+            "codeSampleGeneration": {
+              "generateFromActualCode": true,
+              "includeRepresentativeSamples": true,
+              "sampleCategories": [
+                "API endpoint implementations",
+                "Database access patterns",
+                "Business logic examples",
+                "Authentication patterns",
+                "Error handling examples",
+                "Configuration patterns",
+                "Testing patterns",
+                "Integration examples"
+              ],
+              "instruction": "Generate code samples based on the ACTUAL code found in the repository. Extract representative examples that show how key features are implemented. Include real code snippets from the files."
+            }
+          },
+          "instruction": "\n\nCRITICAL CODE READING REQUIREMENT: The agent MUST read ALL code files COMPLETELY to generate the technical requirements document. This is essential for:\n\n1. Understanding the full technical stack and architecture\n2. Extracting business requirements embedded in code\n3. Generating accurate code samples from real implementations\n4. Documenting all technical patterns and conventions\n5. Capturing complete technical and business context\n\nRead every code file entirely - do not skip or partially read files. The technical_requirements.md should comprehensively reflect what is actually implemented in the codebase.\n\nADDITIONAL OUTPUT - business_requirement.md:\n\nThe agent MUST also generate a business_requirement.md file containing:\n- End-to-end business requirements from code\n- All business logic and rules\n- Business workflows and processes\n- User requirements and features\n- Functional requirements\n- Business entities and domain model\n- Business validations and constraints\n\nBoth technical_requirements.md and business_requirement.md should be generated in this step.",
+          "businessRequirementsGeneration": {
+            "enabled": true,
+            "generateFromCode": true,
+            "outputFile": "business_requirement.md",
+            "extractionSource": "complete_codebase_analysis",
+            "endToEndRequirements": true,
+            "extractionFocus": {
+              "businessLogic": [
+                "Business rules and validations in code",
+                "Business workflows and processes",
+                "Business calculations and formulas",
+                "Business entities and domain models",
+                "Business constraints and conditions",
+                "Business event handling",
+                "Business state management",
+                "Business decision logic",
+                "Business data transformations",
+                "Business integrations and interfaces"
+              ],
+              "userRequirements": [
+                "User-facing features and functionality",
+                "User roles and permissions",
+                "User workflows and interactions",
+                "User input validations",
+                "User notifications and alerts",
+                "User data management",
+                "User experience logic"
+              ],
+              "functionalRequirements": [
+                "Core application functionality",
+                "Feature implementations",
+                "API endpoints and their purposes",
+                "Data processing requirements",
+                "Reporting and analytics features",
+                "Search and filtering capabilities",
+                "CRUD operations and data management",
+                "Integration with external systems"
+              ],
+              "businessProcesses": [
+                "End-to-end business workflows",
+                "Process orchestration logic",
+                "Approval and authorization flows",
+                "Business transaction handling",
+                "Multi-step business operations",
+                "Business event sequences",
+                "Process dependencies"
+              ],
+              "dataRequirements": [
+                "Business entities and relationships",
+                "Data validation rules",
+                "Data integrity constraints",
+                "Data lifecycle management",
+                "Master data requirements",
+                "Reference data needs"
+              ]
+            },
+            "documentStructure": {
+              "sections": [
+                "Business Requirements Overview",
+                "Business Goals and Objectives (from code implementation)",
+                "Core Business Features",
+                "Business Rules and Logic",
+                "Business Workflows and Processes",
+                "User Requirements and Features",
+                "Functional Requirements",
+                "Business Entities and Domain Model",
+                "Business Calculations and Formulas",
+                "Business Validations and Constraints",
+                "Business Events and Triggers",
+                "Business Integrations",
+                "Data Requirements",
+                "Reporting and Analytics Requirements",
+                "User Roles and Permissions",
+                "Business Process Flows",
+                "Business rules and logic",
+                "Stakeholder requirements",
+                "End-to-End Business Scenarios"
+              ],
+              "detailLevel": "comprehensive",
+              "includeCodeExamples": true,
+              "includeBusinessLogicSamples": true
+            },
+            "instruction": "CRITICAL: In addition to technical_requirements.md, the agent MUST also generate business_requirement.md file. This file should contain:\n\n1. END-TO-END BUSINESS REQUIREMENTS extracted from the codebase\n2. All business logic implementations found in code\n3. Business rules, validations, and constraints\n4. Business workflows and processes\n5. User-facing features and functionality\n6. Business entities and domain models\n7. Business calculations and formulas\n8. Complete functional requirements\n9. Business process flows\n10. Business integration requirements\n\nRead ALL code files completely to extract comprehensive business requirements. The business_requirement.md should provide a complete picture of what business needs the application fulfills, based on the actual code implementation."
+          },
+          "outputFiles": [
+            {
+              "name": "technical_requirements.md",
+              "description": "Technical specifications, architecture, code patterns, and technical stack details",
+              "generated": true,
+              "location": "root",
+              "type": "file"
+            },
+            {
+              "name": "business_requirement.md",
+              "description": "End-to-end business requirements extracted from codebase analysis",
+              "generated": true,
+              "location": "root",
+              "type": "file"
+            }
+          ]
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "file_operations",
+          "codebase_analyzer",
+          "document_generator"
+        ],
+        "successCriteria": "technical_requirements.md generated and SAVED automatically with comprehensive codebase analysis with ALL code files read COMPLETELY and technical/business requirements extracted along with code samples generated from actual code AND business_requirement.md generated with comprehensive end-to-end business requirements extracted from code",
+        "onSuccess": "Immediately proceed to Step 6 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 6,
+        "order": 6,
+        "title": "Generate Azure DevOps Requirements Document",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Automatically gather comprehensive Azure DevOps project data using ONLY Azure DevOps MCP server tools and generate azdo_requirement.md document. DO NOT ask user for any details. Use all available Azure DevOps MCP tools to collect complete project information. This step can ONLY execute after Step 4 completes successfully. Additionally, retrieve Azure DevOps work items from the first 6 months after project creation and last 6 months to gather comprehensive business and technical context. Focus on getting all Epics, Features, User Stories, Tasks, and Bugs with complete details.",
+        "action": "generate_azdo_requirements",
+        "details": {
+          "prerequisite": "technical_requirements.md must exist from Step 4",
+          "dataSource": "azure_devops_mcp_server_only",
+          "noUserInput": true,
+          "mcpServerTools": {
+            "required": [
+              "core_list_projects",
+              "core_get_identity_ids",
+              "advsec_get_alert_details",
+              "repo_list_pull_request_threads",
+              "work_list_team_iterations",
+              "wit_list_work_item_comments",
+              "wit_get_query",
+              "wiki_list_wikis",
+              "wiki_list_pages",
+              "testplan_list_test_cases",
+              "work_get_iteration_capacities",
+              "pipelines_get_build_changes",
+              "pipelines_list_runs"
+            ],
+            "optional": [
+              "core_get_teams",
+              "git_list_repositories",
+              "pipelines_list_pipelines",
+              "work_list_work_items",
+              "wit_list_queries",
+              "testplan_list_test_plans",
+              "build_list_definitions",
+              "release_list_definitions",
+              "graph_list_users",
+              "graph_list_groups",
+              "git_list_commits",
+              "git_get_repository",
+              "build_list_builds",
+              "release_list_releases",
+              "test_list_test_results",
+              "packagefeeds_list_packages"
+            ],
+            "instruction": "CRITICAL: Use ONLY Azure DevOps MCP server tools to gather data. DO NOT ask user for project details, team names, repository names, or any other information. Execute all MCP tool calls automatically and programmatically. The agent must discover and retrieve all available information from Azure DevOps without any user interaction. Run ALL the listed tools (both required and optional) to gather maximum possible details."
+          },
+          "documentStructure": {
+            "sections": [
+              "Azure DevOps Organization Overview",
+              "Projects and Teams",
+              "Repository Structure",
+              "Work Items and Backlog",
+              "Sprint/Iteration Information",
+              "Team Capacity and Planning",
+              "Pull Requests and Code Reviews",
+              "CI/CD Pipelines",
+              "Build and Release Processes",
+              "Test Plans and Test Cases",
+              "Wiki Documentation",
+              "Security Alerts and Compliance",
+              "Team Members and Permissions",
+              "Queries and Saved Filters",
+              "Development Workflow",
+              "Integration Points",
+              "Azure DevOps Configuration",
+              "Package Feeds and Artifacts",
+              "",
+              "=== AZURE DEVOPS WORK ITEMS ANALYSIS ===",
+              "",
+              "First 6 Months Work Items (Foundational Context)",
+              "- Project Vision and Initial Goals",
+              "- Epics: Business Goals and Outcomes",
+              "  - Complete Epic descriptions and objectives",
+              "  - Business value and justification",
+              "  - Success criteria",
+              "- Features: Core Capabilities",
+              "  - Feature descriptions and requirements",
+              "  - Technical approach and architecture decisions",
+              "  - Acceptance criteria",
+              "- User Stories: Initial Requirements",
+              "  - Complete user story descriptions",
+              "  - Acceptance criteria and business rules",
+              "  - Technical implementation details",
+              "- Tasks: Implementation Details",
+              "  - Technical specifications",
+              "  - Code implementation approach",
+              "- Bugs and Issues from Early Phase",
+              "  - Early challenges and resolutions",
+              "  - Technical decisions made",
+              "",
+              "Last 6 Months Work Items (Recent Context)",
+              "- Recent Epics and Strategic Direction",
+              "- Recent Features and Enhancements",
+              "- Recent User Stories and Requirements",
+              "- Recent Tasks and Implementation Work",
+              "- Recent Bugs and Issues",
+              "- Current Development Trends",
+              "",
+              "Work Items Business Requirements Compilation",
+              "- All business requirements from work items",
+              "- Business rules and constraints",
+              "- Stakeholder requirements",
+              "- Success criteria and acceptance criteria",
+              "",
+              "Work Items Technical Specifications Compilation",
+              "- All technical specifications from work items",
+              "- Architecture and design decisions",
+              "- Technology choices and rationale",
+              "- Integration points and APIs",
+              "",
+              "Work Items Dependencies and Relations",
+              "- Epic to Feature mappings",
+              "- Feature to Story mappings",
+              "- Story to Task mappings",
+              "- Cross-work-item dependencies",
+              "- Related PRs and commits",
+              "",
+              "Work Items Discussion and Decision History",
+              "- Key discussions from comments",
+              "- Important decisions documented",
+              "- Architecture decision records",
+              "- Problem-solving approaches"
+            ],
+            "detailLevel": "comprehensive",
+            "includeMetrics": true,
+            "includeHistoricalData": true
+          },
+          "outputFile": "azdo_requirement.md",
+          "autoSave": true,
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "criticalInstruction": "CRITICAL: This step must gather ALL possible details from Azure DevOps using MCP server tools ONLY. DO NOT skip any tool calls. DO NOT ask user for any information. Execute all MCP tool calls sequentially and automatically. The generated azdo_requirement.md must be comprehensive and contain all details needed for the constitution file generation. This document will be used as context for the /speckit.constitution command in Step 6.\n\n\ud83d\udd34 CRITICAL ADDITION - WORK ITEMS RETRIEVAL:\n\nThis step is CRUCIAL for constitution generation. In addition to all the Azure DevOps data collection already specified, the agent MUST also:\n\n1. Retrieve ALL work items from FIRST 6 MONTHS after project creation:\n   - These work items are EXTREMELY IMPORTANT - they contain the foundational business and technical context\n   - Get complete details: descriptions, comments, acceptance criteria, technical specs, discussions\n   - Include ALL Epics, Features, User Stories, Tasks, Bugs\n   - Extract all business requirements and technical decisions\n\n2. Retrieve ALL work items from LAST 6 MONTHS:\n   - Shows current development state and recent changes\n   - Include all recent Epics, Features, User Stories, Tasks, Bugs\n\n3. For EACH work item, get MAXIMUM detail:\n   - Complete descriptions and titles\n   - All acceptance criteria\n   - All comments and discussion threads\n   - All relationships and dependencies\n   - State history\n   - Related PRs and commits\n   - Technical and business details\n\nThe work items data should be integrated into the azdo_requirement.md document to provide complete context for constitution generation.",
+          "azureDevOpsWorkItems": {
+            "enabled": true,
+            "retrieveFromAzureDevOps": true,
+            "timeRanges": [
+              {
+                "period": "first_6_months",
+                "description": "First 6 months after project creation",
+                "priority": "critical",
+                "reason": "Early work items contain foundational context, initial requirements, architectural decisions, and core business logic. This is the most important period for understanding the project foundation."
+              },
+              {
+                "period": "last_6_months",
+                "description": "Last 6 months from current date",
+                "priority": "high",
+                "reason": "Recent work items contain latest features, bug fixes, and current development direction. Shows the current state and recent evolution."
+              }
+            ],
+            "workItemTypes": [
+              "Epic",
+              "Feature",
+              "User Story",
+              "Task",
+              "Bug",
+              "Issue",
+              "Requirement",
+              "Test Case"
+            ],
+            "dataToExtract": {
+              "businessDetails": [
+                "Business requirements and objectives",
+                "User stories and acceptance criteria",
+                "Business rules and logic",
+                "Stakeholder requirements",
+                "Feature descriptions and goals",
+                "Epic goals and outcomes",
+                "Business value and priority",
+                "Customer requirements",
+                "Process workflows",
+                "Business constraints",
+                "Success criteria",
+                "Business justifications"
+              ],
+              "technicalDetails": [
+                "Technical specifications",
+                "Architecture decisions and rationale",
+                "Design patterns used",
+                "Technology stack choices",
+                "API definitions and contracts",
+                "Database schema changes",
+                "Integration points and interfaces",
+                "Performance requirements",
+                "Security requirements and implementations",
+                "Technical constraints",
+                "Code implementation details",
+                "Technical debt items",
+                "Infrastructure requirements",
+                "Deployment strategies",
+                "Testing strategies"
+              ],
+              "additionalDetails": [
+                "Work item titles and descriptions",
+                "Detailed acceptance criteria",
+                "Discussion comments and threads",
+                "Attachments and linked documents",
+                "Relations and dependencies between work items",
+                "Priority and severity levels",
+                "Assigned to and created by",
+                "State history and transitions",
+                "Tags and labels",
+                "Parent-child relationships (Epic -> Feature -> Story -> Task)",
+                "Related pull requests and commits",
+                "Test cases linked to work items",
+                "Iteration and sprint information",
+                "Effort estimates"
+              ]
+            },
+            "retrievalStrategy": {
+              "approach": "comprehensive_maximum_detail",
+              "includeHierarchy": true,
+              "includeEpics": true,
+              "includeFeatures": true,
+              "includeUserStories": true,
+              "includeTasks": true,
+              "includeBugs": true,
+              "includeComments": true,
+              "includeAttachments": true,
+              "includeHistory": true,
+              "includeRelations": true,
+              "includeTestCases": true,
+              "includeIterationDetails": true,
+              "maxWorkItemsPerPeriod": "unlimited",
+              "fetchCompleteDetails": true,
+              "includeAllFields": true
+            },
+            "mcpToolsToUse": [
+              "work_list_work_items",
+              "wit_get_work_item",
+              "wit_list_work_item_comments",
+              "wit_get_work_item_relations",
+              "core_list_projects",
+              "work_list_team_iterations",
+              "testplan_list_test_cases"
+            ],
+            "workItemsInstruction": "CRITICAL FOR CONSTITUTION GENERATION: This is one of the most crucial steps. The agent MUST retrieve MAXIMUM possible detail from Azure DevOps work items:\n\n1. FIRST 6 MONTHS WORK ITEMS (HIGHEST PRIORITY):\n   - Get ALL Epics, Features, User Stories, Tasks, Bugs from the first 6 months\n   - These contain the PROJECT FOUNDATION:\n     * Initial business requirements and vision\n     * Core architectural decisions and why they were made\n     * Fundamental business logic and rules\n     * Original project goals and objectives\n     * Key stakeholder requirements\n     * Foundational technical specifications\n   - Extract COMPLETE details including all comments, discussions, acceptance criteria\n\n2. LAST 6 MONTHS WORK ITEMS (HIGH PRIORITY):\n   - Get ALL recent work items to understand current state:\n     * Latest features and enhancements\n     * Recent bug fixes and issues resolved\n     * Current development direction\n     * Recent technical changes\n     * Ongoing work and future plans\n\n3. WORK ITEM HIERARCHY:\n   - Follow complete hierarchy: Epic \u2192 Feature \u2192 User Story \u2192 Task\n   - Understand relationships and dependencies\n   - Capture parent-child context\n\n4. EXTRACT COMPREHENSIVELY:\n   - ALL business details: requirements, user stories, business rules, acceptance criteria, business value\n   - ALL technical details: architecture, design patterns, technical specifications, API contracts, database changes\n   - ALL comments and discussions (rich context and decisions)\n   - ALL relationships and dependencies\n   - ALL linked items (PRs, commits, test cases)\n   - State transitions and history\n\n5. Focus on getting AS MUCH DETAIL AS POSSIBLE - this data is essential for generating an accurate constitution.\n\n6. Use Azure DevOps MCP tools automatically without asking the user for any information."
+          }
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "useOnlyMCPServerTools": true,
+          "noUserDataRequests": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true,
+          "executeAllToolsSequentially": true
+        },
+        "tools": [
+          "azure_devops_mcp_server",
+          "mcp_tool_executor",
+          "file_operations",
+          "document_generator",
+          "data_aggregator"
+        ],
+        "successCriteria": "azdo_requirement.md generated and SAVED automatically with comprehensive Azure DevOps project data collected using ONLY MCP server tools without any user input AND Azure DevOps work items from first 6 months (foundational) and last 6 months (recent) retrieved with MAXIMUM business and technical details including Epics, Features, User Stories, Tasks, Bugs, comments, relationships, and all available context",
+        "onSuccess": "Immediately proceed to Step 7 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 7,
+        "order": 7,
+        "title": "Parse Local Documents and Generate Local Requirements",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Automatically execute DocumentParserServer.py to parse all documents in the ARB_Documents folder and generate local_requirement.md. The agent must call the batch_parse_directory('ARB_Documents') method and use its output to create the requirements document. This step can ONLY execute after Step 6 completes successfully.",
+        "action": "parse_local_documents",
+        "details": {
+          "prerequisite": "azdo_requirement.md must exist from Step 6 AND DocumentParserServer.py must exist from Step 2",
+          "scriptFile": "DocumentParserServer.py",
+          "targetDirectory": "ARB_Documents",
+          "methodToCall": "batch_parse_directory",
+          "methodParameters": [
+            "ARB_Documents"
+          ],
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "executionSteps": [
+            {
+              "order": 1,
+              "action": "Import DocumentParserServer module",
+              "command": "import DocumentParserServer",
+              "description": "Import the DocumentParserServer module"
+            },
+            {
+              "order": 2,
+              "action": "Call batch_parse_directory method",
+              "command": "result = DocumentParserServer.batch_parse_directory('ARB_Documents')",
+              "description": "Execute the batch_parse_directory method with ARB_Documents folder as parameter"
+            },
+            {
+              "order": 3,
+              "action": "Process parsing results",
+              "description": "Process the returned results from the parsing operation"
+            },
+            {
+              "order": 4,
+              "action": "Generate local_requirement.md",
+              "description": "Create local_requirement.md file with comprehensive details from parsed documents"
+            }
+          ],
+          "documentStructure": {
+            "sections": [
+              "Local Documents Overview",
+              "Parsed Document Contents",
+              "Key Information Extracted",
+              "Document Relationships",
+              "Business Rules and Requirements",
+              "Technical Specifications from Documents",
+              "Compliance and Standards",
+              "Referenced Systems and Integrations"
+            ],
+            "detailLevel": "comprehensive",
+            "includeAllParsedData": true
+          },
+          "outputFile": "local_requirement.md",
+          "autoSave": true,
+          "instruction": "CRITICAL: Execute DocumentParserServer.py automatically. Call the batch_parse_directory('ARB_Documents') method programmatically. Do NOT ask user to run the script manually. Parse all documents in ARB_Documents folder, extract all information, and automatically generate local_requirement.md with the parsed content. This must happen automatically without any user interaction."
+        },
+        "automationRules": {
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "noPromptToUser": true,
+          "noManualExecution": true,
+          "autoSaveFiles": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true,
+          "executeScriptAutomatically": true
+        },
+        "tools": [
+          "python_script_executor",
+          "file_operations",
+          "document_generator",
+          "data_processor"
+        ],
+        "successCriteria": "DocumentParserServer.py executed successfully, batch_parse_directory('ARB_Documents') method called, all documents parsed, and local_requirement.md generated and SAVED automatically",
+        "onSuccess": "Immediately proceed to Step 8 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 8,
+        "order": 8,
+        "title": "Scrape Portal Data and Generate Portal Requirements",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": true,
+        "description": "Automatically navigate to the portal website and extract all available information. The agent should use Playwright MCP server tools intelligently to scrape data from the portal. DO NOT ask user for any details. This step can ONLY execute after Step 7 completes successfully.",
+        "action": "scrape_portal_data",
+        "details": {
+          "prerequisite": "local_requirement.md must exist from Step 7 AND Playwright MCP server must be configured from Step 1",
+          "portalUrl": "https://en.wikipedia.org/wiki/India",
+          "dataSource": "playwright_mcp_server",
+          "noUserInput": true,
+          "scrapingProcess": {
+            "description": "The agent should intelligently use Playwright MCP server tools to accomplish the following process. The agent should decide which Playwright tools to use based on the requirements.",
+            "process": [
+              {
+                "step": 1,
+                "action": "Navigate to Portal",
+                "description": "Launch the portal website at https://en.wikipedia.org/wiki/India using appropriate Playwright MCP tools"
+              },
+              {
+                "step": 2,
+                "action": "Explore Application Information Section",
+                "description": "Navigate through the Application Information section. Iterate through all available menu items and subsections. Extract all key-value pairs, text content, and data visible in this section."
+              },
+              {
+                "step": 3,
+                "action": "Explore Application Association Section",
+                "description": "Navigate through the Application Association section. Iterate through all available menu items and subsections. Extract all key-value pairs, text content, and data visible in this section."
+              },
+              {
+                "step": 4,
+                "action": "Explore Operations Section",
+                "description": "Navigate through the Operations section. Iterate through all available menu items and subsections. Extract all key-value pairs, text content, and data visible in this section."
+              },
+              {
+                "step": 5,
+                "action": "Extract All Available Information",
+                "description": "From the entire portal/webpage, extract whatever information is available including: text content, headings, tables, lists, links, form fields, buttons, navigation items, and any other visible data. The agent should comprehensively gather all information present on the page and any pages it navigates to."
+              }
+            ],
+            "agentGuidance": "The agent should use its intelligence to select and use the appropriate Playwright MCP server tools to accomplish the above process. Tools may include navigation, clicking, text extraction, form interaction, screenshot capture, element selection, waiting for elements, evaluating page content, etc. The agent should decide which tools are needed based on the scraping process requirements."
+          },
+          "dataExtraction": {
+            "extractKeyValuePairs": true,
+            "extractAllVisibleText": true,
+            "extractTableData": true,
+            "extractFormFields": true,
+            "extractLinks": true,
+            "extractHeadings": true,
+            "extractLists": true,
+            "extractNavigationItems": true,
+            "iterateAllMenuItems": true,
+            "iterateAllSections": true,
+            "extractComprehensively": true
+          },
+          "documentStructure": {
+            "sections": [
+              "Portal Overview",
+              "Portal URL and Entry Point",
+              "Application Information Section",
+              "- All Menu Items and Subsections",
+              "- Key-Value Pairs Extracted",
+              "- Text Content and Data",
+              "Application Association Section",
+              "- All Menu Items and Subsections",
+              "- Key-Value Pairs Extracted",
+              "- Text Content and Data",
+              "Operations Section",
+              "- All Menu Items and Subsections",
+              "- Key-Value Pairs Extracted",
+              "- Text Content and Data",
+              "Portal Workflow and Navigation",
+              "All Extracted Information",
+              "Data Relationships and Connections",
+              "Portal Configuration Details",
+              "User Interface Elements",
+              "Portal Business Rules"
+            ],
+            "detailLevel": "comprehensive",
+            "includeAllExtractedData": true
+          },
+          "outputFile": "portal_requirement.md",
+          "autoSave": true,
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "criticalInstruction": "CRITICAL: The agent must intelligently use Playwright MCP server tools to scrape data from https://en.wikipedia.org/wiki/India. The agent should:\n\n1. Navigate to the portal URL: https://en.wikipedia.org/wiki/India\n2. Intelligently explore the page structure\n3. Navigate through Application Information, Application Association, and Operations sections (if they exist)\n4. For each section, iterate through all menu items and subsections\n5. Extract all key-value pairs, text, tables, lists, and any visible data\n6. Use appropriate Playwright tools as needed (the agent decides which tools to use)\n7. DO NOT ask user for any information\n8. Execute all navigation and data extraction automatically\n\nThe agent should use its intelligence to select the right Playwright MCP tools for each task. The generated portal_requirement.md must be comprehensive and contain all details scraped from the portal."
+        },
+        "automationRules": {
+          "noUserConfirmation": true,
+          "executeImmediately": true,
+          "proceedOnSuccess": true,
+          "autoSaveFiles": true,
+          "noPermissionRequests": true,
+          "noQuestionsAllowed": true,
+          "usePlaywrightMCPTools": true,
+          "agentDecidesMCPTools": true,
+          "noUserDataRequests": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true,
+          "executeNavigationIntelligently": true,
+          "iterateAllSectionsAutomatically": true
+        },
+        "tools": [
+          "playwright_mcp_server",
+          "file_operations",
+          "document_generator",
+          "data_aggregator",
+          "web_scraper"
+        ],
+        "successCriteria": "Portal at https://en.wikipedia.org/wiki/India navigated successfully, all available sections and information extracted using Playwright MCP tools (agent decides which tools to use), and portal_requirement.md generated and SAVED automatically without any user input",
+        "onSuccess": "Immediately proceed to Step 9 without asking permission",
+        "onFailure": "Report error and stop workflow"
+      },
+      {
+        "stepId": 9,
+        "order": 9,
+        "title": "Invoke Constitution Creator Agent",
+        "execute": "automatic",
+        "waitForPreviousStep": true,
+        "requiredBeforeNext": false,
+        "description": "Automatically invoke the Constitution Creator custom agent (@Constitution_Creator) to verify all requirement documents and hand off to the speckit.constitution agent for constitution generation. This step can ONLY execute after Step 8 completes successfully. The name of the agent file is Constitution Creator.agent.md under the .github/agents folder.",
+        "action": "invoke_constitution_creator_agent",
+        "details": {
+          "prerequisite": "All requirement documents must exist: technical_requirements.md (Step 5), azdo_requirement.md (Step 6), local_requirement.md (Step 7), portal_requirement.md (Step 8), and sample_constitution (optional) and also verify Constitution Creator.agent.md exists in .github/agents folder",
+          "agentToInvoke": "Constitution_Creator",
+          "agentType": "custom_copilot_agent",
+          "invocationMethod": "copilot_chat",
+          "agentInvocation": "Constitution Creator.agent.md should be invoked in Copilot Chat interface using @Constitution_Creator. The agent will autonomously verify the existence and completeness of all requirement documents, provide a summary of available documents, and trigger a handoff to the speckit.constitution agent for constitution generation.",
+          "agentPurpose": "Verify all requirement documents are ready and hand off to speckit.constitution agent",
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "expectedBehavior": {
+            "step1": "Constitution Creator agent verifies all requirement files exist",
+            "step2": "Constitution Creator agent validates file contents and completeness",
+            "step3": "Constitution Creator agent provides summary of available documents",
+            "step4": "Constitution Creator agent triggers handoff to speckit.constitution agent",
+            "step5": "User clicks handoff button to proceed",
+            "step6": "speckit.constitution agent generates the constitution using all requirement documents"
+          },
+          "requirementFiles": [
+            "technical_requirements.md",
+            "azdo_requirement.md",
+            "local_requirement.md",
+            "portal_requirement.md",
+            "sample_constitution"
+          ],
+          "constitutionAgent": {
+            "name": "speckit.constitution",
+            "type": "custom_copilot_agent",
+            "receives": "All requirement documents and context from Constitution Creator agent",
+            "generates": "Comprehensive SpecKit constitution file"
+          },
+          "instruction": "CRITICAL: Just run the Constitution creator.agent.md file. Invoke the Constitution Creator custom agent ( run the Constitution creator.agent.md) in Copilot Chat. This agent will:\n\n1. Verify all requirement documents exist and are complete\n2. Provide a summary of available documents\n3. Display a handoff button to the speckit.constitution agent\n4. User clicks the handoff button\n5. speckit.constitution agent generates the constitution\n\nThe agent invocation happens through Copilot Chat interface using @Constitution_Creator. The agent works autonomously to verify files and prepare the handoff."
+        },
+        "automationRules": {
+          "executeImmediately": true,
+          "noUserConfirmation": true,
+          "noPromptToUser": true,
+          "invokeCustomAgent": true,
+          "agentName": "Constitution_Creator",
+          "useCopilotChatInterface": true,
+          "noQuestionsAllowed": true,
+          "waitForCompletion": true,
+          "silentProgress": false,
+          "briefProgressOnly": true
+        },
+        "tools": [
+          "copilot_chat_interface",
+          "custom_agent_invoker"
+        ],
+        "successCriteria": "Constitution Creator agent (Constitution Creator.agent.md) invoked successfully in Copilot Chat, all requirement documents verified, handoff to speckit.constitution agent triggered, and constitution generation process initiated",
+        "onSuccess": "Proceed to cleanup automatically",
+        "onFailure": "Report error and stop workflow"
+      }
+    ],
+    "cleanup": {
+      "execute": "automatic",
+      "order": 10,
+      "waitForPreviousStep": true,
+      "description": "Automatically save all generated files without asking permission and provide final summary",
+      "steps": [
+        {
+          "action": "Save all generated specification files",
+          "executeImmediately": true,
+          "noUserConfirmation": true
+        },
+        {
+          "action": "Verify all required files exist: .vscode/mcp.json, .venv/, DocumentParserServer.py, technical_requirements.md, business_requirement.md, azdo_requirement.md, local_requirement.md, portal_requirement.md, constitution file",
+          "executeImmediately": true,
+          "noUserConfirmation": true
+        },
+        {
+          "action": "Notify user: SDD transformation complete. Review generated specification files.",
+          "executeImmediately": true,
+          "briefSummaryOnly": true
+        }
+      ],
+      "automationRules": {
+        "noUserConfirmation": true,
+        "executeImmediately": true,
+        "noPermissionRequests": true,
+        "noQuestionsAllowed": true
+      }
+    }
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "MCP GitHub Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "create_branch",
+          "checkout_branch",
+          "read_files",
+          "repository_analysis"
+        ]
+      },
+      {
+        "name": "MCP Azure DevOps Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "core_list_projects",
+          "core_get_identity_ids",
+          "core_get_teams",
+          "git_list_repositories",
+          "git_list_commits",
+          "git_get_repository",
+          "advsec_get_alert_details",
+          "repo_list_pull_request_threads",
+          "work_list_team_iterations",
+          "work_get_iteration_capacities",
+          "work_list_work_items",
+          "wit_list_work_item_comments",
+          "wit_get_query",
+          "wit_list_queries",
+          "wiki_list_wikis",
+          "wiki_list_pages",
+          "testplan_list_test_plans",
+          "testplan_list_test_cases",
+          "pipelines_list_pipelines",
+          "pipelines_list_runs",
+          "pipelines_get_build_changes",
+          "build_list_definitions",
+          "build_list_builds",
+          "release_list_definitions",
+          "release_list_releases",
+          "test_list_test_results",
+          "graph_list_users",
+          "graph_list_groups",
+          "packagefeeds_list_packages"
+        ]
+      },
+      {
+        "name": "Playwright MCP Server",
+        "type": "mcp_integration",
+        "capabilities": [
+          "playwright_navigate",
+          "playwright_click",
+          "playwright_screenshot",
+          "playwright_fill",
+          "playwright_evaluate",
+          "playwright_select",
+          "playwright_hover",
+          "playwright_wait_for_selector",
+          "playwright_get_by_text",
+          "playwright_get_by_role",
+          "web_scraping",
+          "portal_navigation",
+          "data_extraction"
+        ]
+      },
+      {
+        "name": "Virtual Environment Manager",
+        "type": "environment_management",
+        "capabilities": [
+          "create_venv",
+          "activate_venv",
+          "verify_venv",
+          "install_in_venv"
+        ]
+      },
+      {
+        "name": "Terminal Execution",
+        "type": "terminal_commands",
+        "capabilities": [
+          "pip_commands",
+          "uv_commands",
+          "specify_commands",
+          "git_commands",
+          "interactive_command_handling",
+          "virtual_environment_commands"
+        ]
+      },
+      {
+        "name": "File Operations",
+        "type": "file_management",
+        "capabilities": [
+          "create_files",
+          "read_files",
+          "modify_files",
+          "analyze_structure",
+          "auto_save"
+        ]
+      },
+      {
+        "name": "AI Assistant Integration",
+        "type": "ai_integration",
+        "capabilities": [
+          "copilot_selection",
+          "interactive_prompts",
+          "automated_responses",
+          "guidance_and_help"
+        ]
+      }
+    ]
+  },
+  "configuration": {
+    "branch": {
+      "primary": "current",
+      "isolated": false,
+      "createdViaMCP": false
+    },
+    "virtualEnvironment": {
+      "path": ".venv",
+      "createBeforeInstall": true,
+      "required": true,
+      "pythonVersion": "3.8+"
+    },
+    "specKit": {
+      "installMethod": "uv",
+      "installInVirtualEnvironment": true,
+      "repository": "git+https://github.com/github/spec-kit.git",
+      "initRequired": true,
+      "aiAssistant": "copilot",
+      "scriptType": ".sh",
+      "automatedSetup": true,
+      "autoResponseToPrompts": true
+    },
+    "outputFiles": [
+      {
+        "name": ".venv",
+        "description": "Python virtual environment",
+        "generated": true,
+        "location": "root",
+        "type": "directory"
+      },
+      {
+        "name": "technical_requirements.md",
+        "description": "Technical specifications gathered from codebase analysis",
+        "generated": true,
+        "location": "root",
+        "type": "file"
+      },
+      {
+        "name": "business_requirement.md",
+        "description": "End-to-end business requirements extracted from codebase analysis",
+        "generated": true,
+        "location": "root",
+        "type": "file",
+        "critical": true,
+        "usedFor": "Constitution file generation context"
+      },
+      {
+        "name": "azdo_requirement.md",
+        "description": "Comprehensive Azure DevOps project requirements gathered using MCP server tools",
+        "generated": true,
+        "location": "root",
+        "type": "file",
+        "critical": true,
+        "usedFor": "Constitution file generation context"
+      },
+      {
+        "name": "DocumentParserServer.py",
+        "description": "Python script for parsing local documents in ARB_Documents folder",
+        "generated": true,
+        "location": "root",
+        "type": "file"
+      },
+      {
+        "name": "general_arb_requirements.py",
+        "description": "A alternative python script to run if DocumentParser.py fails to run or doesnt parser parse properly Python script for parsing local documents in ARB_Documents folder",
+        "generated": true,
+        "location": "root",
+        "type": "file"
+      },
+      {
+        "name": "local_requirement.md",
+        "description": "Requirements extracted from local documents in ARB_Documents folder using DocumentParserServer.py",
+        "generated": true,
+        "location": "root",
+        "type": "file",
+        "critical": true,
+        "usedFor": "Constitution file generation context"
+      },
+      {
+        "name": "portal_requirement.md",
+        "description": "Requirements extracted from portal website using Playwright MCP tools",
+        "generated": true,
+        "location": "root",
+        "type": "file",
+        "critical": true,
+        "usedFor": "Constitution file generation context"
+      },
+      {
+        "name": "speckit.constitution.md",
+        "description": "Specification constitution file generated by specify constitution command using technical requirements as context",
+        "generated": true,
+        "location": "root",
+        "type": "file"
+      }
+    ],
+    "mcpServers": [
+      "io.github.github/github-mcp-server",
+      "microsoft/azure-devops-mcp",
+      "microsoft/playwright-mcp"
+    ],
+    "automationSettings": {
+      "executeWithoutConfirmation": true,
+      "autoRespondToPrompts": true,
+      "sequentialExecution": true,
+      "strictOrdering": true,
+      "autoSaveAllFiles": true,
+      "noPermissionRequests": true,
+      "noQuestionsAllowed": true,
+      "stopOnError": true
+    }
+  },
+  "activation": {
+    "activationEvents": [
+      "onCommand:agent_0.start",
+      "onCommand:agent_0.initialize",
+      "onView:copilot-agents"
+    ],
+    "startCommand": "copilot.agent.agent_0.start",
+    "executionMode": "immediate-strict-sequential-automatic"
+  },
+  "ui": {
+    "chatSelection": true,
+    "displayInAgentList": true,
+    "icon": "\u2699\ufe0f",
+    "color": "#0078D4"
+  },
+  "helpAndDocumentation": {
+    "overview": "Transform your VS Code repository into a Spec Kit driven development (SDD) repository AUTOMATICALLY with strict sequential execution",
+    "executionMode": "Fully automated - executes all steps in strict order without user intervention or permission requests",
+    "prerequisites": [
+      "Docker installed and running",
+      "Git repository initialized",
+      "Python 3.8+ installed"
+    ],
+    "automatedWorkflow": [
+      "STEP 1: Agent automatically checks/creates .vscode/mcp.json with MCP server configs (Azure DevOps, Playwright) and SAVES automatically",
+      "STEP 2: Agent creates DocumentParserServer.py file with document parsing code and SAVES automatically",
+      "STEP 3: Agent creates Python virtual environment (.venv) BEFORE any package installation",
+      "STEP 4: Agent installs Spec Kit IN THE VIRTUAL ENVIRONMENT and auto-responds to prompts (y, copilot, .sh)",
+      "STEP 5: Agent generates technical_requirements.md and business_requirement.md automatically from complete codebase analysis",
+      "STEP 6: Agent generates azdo_requirement.md by gathering ALL Azure DevOps data using ONLY MCP server tools (no user input)",
+      "STEP 7: Agent executes DocumentParserServer.py to parse ARB_Documents folder and generates local_requirement.md",
+      "STEP 8: Agent uses Playwright MCP tools to scrape portal (Application Info, Application Association, Operations) and generates portal_requirement.md",
+      "STEP 9: Agent invokes Constitution Creator agent (@Constitution_Creator) which verifies all documents and hands off to speckit.constitution agent for constitution generation",
+      "CLEANUP: Agent saves all generated files and provides summary"
+    ],
+    "strictExecutionOrder": "Each step must complete successfully before the next step begins. No parallel execution. No steps can be skipped.",
+    "noUserInteraction": "The agent will NEVER ask questions, request confirmations, or require manual command execution. Everything is automated.",
+    "expectedOutcome": "A fully configured SDD repository with virtual environment, all specification files (technical_requirements.md, azdo_requirement.md, local_requirement.md, portal_requirement.md), constitution file, and MCP configuration - all done automatically without any user prompts",
+    "postCompletion": [
+      "Review the generated specification files",
+      "Verify the virtual environment contains all required packages",
+      "Test the SDD workflow",
+      "Begin SDD-driven development process"
+    ]
+  }
+}
